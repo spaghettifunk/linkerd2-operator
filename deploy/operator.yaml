@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linkerd2-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: linkerd2-operator
+  template:
+    metadata:
+      labels:
+        name: linkerd2-operator
+    spec:
+      serviceAccountName: linkerd2-operator
+      containers:
+        - name: linkerd2-operator
+          # Replace this with the built image name
+          image: davideberdin/linkerd2-operator:v0.0.1
+          command:
+            - linkerd2-operator
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "linkerd2-operator"
