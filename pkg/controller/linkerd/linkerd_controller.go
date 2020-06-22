@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
+	"github.com/goph/emperror"
 	linkerdv1alpha1 "github.com/spaghettifunk/linkerd2-operator/pkg/apis/linkerd/v1alpha1"
+	"github.com/spaghettifunk/linkerd2-operator/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -21,12 +24,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-var log = logf.Log.WithName("controller_linkerd")
+const finalizerID = "linkerd2-operator.finializer.linkerd.io"
+const linkerdSecretTypePrefix = "linkerd.io"
 
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic. Delete these comments after modifying this file.
-**/
+var log = logf.Log.WithName("controller")
+var watchCreatedResourcesEvents bool
 
 // Add creates a new Linkerd Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -190,4 +192,63 @@ func getPodNames(pods []corev1.Pod) []string {
 		podNames = append(podNames, pod.Name)
 	}
 	return podNames
+}
+
+func updateStatus(c client.Client, config *linkerdv1alpha1.Linkerd, status linkerdv1alpha1.ConfigState, errorMessage string, logger logr.Logger) error {
+	typeMeta := config.TypeMeta
+	config.Status.Status = status
+	config.Status.ErrorMessage = errorMessage
+	err := c.Status().Update(context.Background(), config)
+	if errors.IsNotFound(err) {
+		err = c.Update(context.Background(), config)
+	}
+	if err != nil {
+		if !errors.IsConflict(err) {
+			return emperror.Wrapf(err, "could not update Linkerd state to '%s'", status)
+		}
+		var actualConfig linkerdv1alpha1.Linkerd
+		err := c.Get(context.TODO(), types.NamespacedName{
+			Namespace: config.Namespace,
+			Name:      config.Name,
+		}, &actualConfig)
+		if err != nil {
+			return emperror.Wrap(err, "could not get config for updating status")
+		}
+		actualConfig.Status.Status = status
+		actualConfig.Status.ErrorMessage = errorMessage
+		err = c.Status().Update(context.Background(), &actualConfig)
+		if errors.IsNotFound(err) {
+			err = c.Update(context.Background(), &actualConfig)
+		}
+		if err != nil {
+			return emperror.Wrapf(err, "could not update Linkerd state to '%s'", status)
+		}
+	}
+	// update loses the typeMeta of the config that's used later when setting ownerrefs
+	config.TypeMeta = typeMeta
+	logger.Info("Linkerd state updated", "status", status)
+	return nil
+}
+
+// RemoveFinalizers removes the finalizers from the context
+func RemoveFinalizers(c client.Client) error {
+	var linkerds linkerdv1alpha1.LinkerdList
+
+	// fix this!
+	// err := c.List(context.TODO(), &client.ListOptions{}, &linkerds)
+	// if err != nil {
+	// 	return emperror.Wrap(err, "could not list Linkerd resources")
+	// }
+
+	for _, linkerd := range linkerds.Items {
+		linkerd.ObjectMeta.Finalizers = util.RemoveString(linkerd.ObjectMeta.Finalizers, finalizerID)
+		if err := c.Update(context.Background(), &linkerd); err != nil {
+			return emperror.WrapWith(err, "could not remove finalizer from Linkerd resource", "name", linkerd.GetName())
+		}
+		if err := updateStatus(c, &linkerd, linkerdv1alpha1.Unmanaged, "", log); err != nil {
+			return emperror.Wrap(err, "could not update status of Linkerd resource")
+		}
+	}
+
+	return nil
 }
