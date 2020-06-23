@@ -2,21 +2,18 @@ package linkerd
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-logr/logr"
 	"github.com/goph/emperror"
+	"github.com/pkg/errors"
 	linkerdv1alpha1 "github.com/spaghettifunk/linkerd2-operator/pkg/apis/linkerd/v1alpha1"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/util"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -38,7 +35,7 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileLinkerd{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileLinkerd{Client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -75,123 +72,69 @@ var _ reconcile.Reconciler = &ReconcileLinkerd{}
 type ReconcileLinkerd struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client client.Client
+	client.Client
 	scheme *runtime.Scheme
 }
 
 // Reconcile reads that state of the cluster for a Linkerd object and makes changes based on the state read
 // and what is in the Linkerd.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
-// a Pod as an example
-// Note:
-// The Controller will requeue the Request to be processed again if the returned error is non-nil or
-// Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileLinkerd) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling Linkerd")
+	logger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 
 	// Fetch the Linkerd instance
-	linkerd := &linkerdv1alpha1.Linkerd{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, linkerd)
+	config := &linkerdv1alpha1.Linkerd{}
+	err := r.Client.Get(context.TODO(), request.NamespacedName, config)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if k8errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			reqLogger.Info("Linkerd resource not found. Ignoring since object must be deleted")
+			logger.Info("Linkerd resource not found. Ignoring since object must be deleted")
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		reqLogger.Error(err, "Failed to get Linkerd")
+		logger.Error(err, "Failed to get Linkerd")
 		return reconcile.Result{}, err
 	}
 
-	// Check if the deployment already exists, if not create a new one
-	found := &appsv1.Deployment{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: linkerd.Name, Namespace: linkerd.Namespace}, found)
+	logger.Info("Reconciling Linkerd")
 
-	if err != nil && errors.IsNotFound(err) {
-		// Define a new deployment
-		dep := r.deploymentForLinkerd(linkerd)
-		reqLogger.Info("Creating a new Deployment", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
-		err = r.client.Create(context.TODO(), dep)
-		if err != nil {
-			reqLogger.Error(err, "Failed to create new Deployment", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
-			return reconcile.Result{}, err
+	if !config.Spec.Version.IsSupported() {
+		err = errors.New("intended Istio version is unsupported by this version of the operator")
+		logger.Error(err, "", "version", config.Spec.Version)
+		return reconcile.Result{
+			Requeue: false,
+		}, nil
+	}
+
+	// Set default values where not set
+	linkerdv1alpha1.SetDefaults(config)
+
+	// start reconciling loop
+	result, err := r.reconcile(logger, config)
+	if err != nil {
+		updateErr := updateStatus(r.Client, config, linkerdv1alpha1.ReconcileFailed, err.Error(), logger)
+		if updateErr != nil {
+			logger.Error(updateErr, "failed to update state")
+			return result, errors.WithStack(err)
 		}
-		// Deployment created successfully - return and requeue
-		return reconcile.Result{Requeue: true}, nil
-	} else if err != nil {
-		reqLogger.Error(err, "Failed to get Deployment")
-		return reconcile.Result{}, err
+		return result, emperror.Wrap(err, "could not reconcile istio")
+	}
+	return result, nil
+}
+
+func (r *ReconcileLinkerd) reconcile(logger logr.Logger, config *linkerdv1alpha1.Linkerd) (reconcile.Result, error) {
+	if config.Status.Status == "" {
+		err := updateStatus(r.Client, config, linkerdv1alpha1.Created, "", logger)
+		if err != nil {
+			return reconcile.Result{}, errors.WithStack(err)
+		}
 	}
 
-	// Deployment already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Deployment already exists", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+	// for each component do a reconciliation
+	// ..
+
 	return reconcile.Result{}, nil
-}
-
-// deploymentForLinkerd returns a linkerd Deployment object
-func (r *ReconcileLinkerd) deploymentForLinkerd(m *linkerdv1alpha1.Linkerd) *appsv1.Deployment {
-	ls := labelsForLinkerd(m.Name)
-	replicas := m.Spec.Size
-	logLevel := m.Spec.LogLevel
-
-	prometheuURL := fmt.Sprintf("http://linkerd-prometheus.%s.svc.cluster.local:9090", m.Namespace)
-	dstAddr := fmt.Sprintf("linkerd-dst.%s.svc.cluster.local:8086", m.Namespace)
-
-	dep := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      m.Name,
-			Namespace: m.Namespace,
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: &replicas,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: ls,
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: ls,
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{{
-						Image: "gcr.io/linkerd-io/controller:latest",
-						Name:  "controller",
-						Command: []string{
-							"public-api",
-							"-prometheus-url=" + prometheuURL,
-							"-destination-addr=" + dstAddr,
-							"-controller-namespace=" + m.Namespace,
-							"-log-level=" + logLevel,
-						},
-						Ports: []corev1.ContainerPort{{
-							ContainerPort: 11211,
-							Name:          "memcached",
-						}},
-					}},
-				},
-			},
-		},
-	}
-	// Set Memcached instance as the owner and controller
-	controllerutil.SetControllerReference(m, dep, r.scheme)
-	return dep
-}
-
-// labelsForLinkerd returns the labels for selecting the resources
-// belonging to the given linkerd CR name.
-func labelsForLinkerd(name string) map[string]string {
-	return map[string]string{"app": "linkerd", "linkerd_cr": name}
-}
-
-// getPodNames returns the pod names of the array of pods passed in
-func getPodNames(pods []corev1.Pod) []string {
-	var podNames []string
-	for _, pod := range pods {
-		podNames = append(podNames, pod.Name)
-	}
-	return podNames
 }
 
 func updateStatus(c client.Client, config *linkerdv1alpha1.Linkerd, status linkerdv1alpha1.ConfigState, errorMessage string, logger logr.Logger) error {
@@ -199,11 +142,11 @@ func updateStatus(c client.Client, config *linkerdv1alpha1.Linkerd, status linke
 	config.Status.Status = status
 	config.Status.ErrorMessage = errorMessage
 	err := c.Status().Update(context.Background(), config)
-	if errors.IsNotFound(err) {
+	if k8errors.IsNotFound(err) {
 		err = c.Update(context.Background(), config)
 	}
 	if err != nil {
-		if !errors.IsConflict(err) {
+		if !k8errors.IsConflict(err) {
 			return emperror.Wrapf(err, "could not update Linkerd state to '%s'", status)
 		}
 		var actualConfig linkerdv1alpha1.Linkerd
@@ -217,7 +160,7 @@ func updateStatus(c client.Client, config *linkerdv1alpha1.Linkerd, status linke
 		actualConfig.Status.Status = status
 		actualConfig.Status.ErrorMessage = errorMessage
 		err = c.Status().Update(context.Background(), &actualConfig)
-		if errors.IsNotFound(err) {
+		if k8errors.IsNotFound(err) {
 			err = c.Update(context.Background(), &actualConfig)
 		}
 		if err != nil {
