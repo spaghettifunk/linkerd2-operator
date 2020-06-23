@@ -47,6 +47,11 @@ type PrometheusConfiguration struct {
 	BaseK8sResourceConfiguration `json:",inline"`
 }
 
+// ProxyInitConfiguration defines the k8s spec configuration for the proxy init container
+type ProxyInitConfiguration struct {
+	BaseK8sResourceConfiguration `json:",inline"`
+}
+
 // ProxyInjectorConfiguration defines the k8s spec configuration for the proxy injector
 type ProxyInjectorConfiguration struct {
 	BaseK8sResourceConfiguration `json:",inline"`
@@ -93,6 +98,9 @@ type LinkerdSpec struct {
 
 	// Prometheus configuration options
 	Prometheus PrometheusConfiguration `json:"prometheus,omitempty"`
+
+	// ProxyInit configuration options
+	ProxyInit ProxyInitConfiguration `json:"proxyInit,omitempty"`
 
 	// ProxyInjector configuration options
 	ProxyInjector ProxyInjectorConfiguration `json:"proxyInjector,omitempty"`

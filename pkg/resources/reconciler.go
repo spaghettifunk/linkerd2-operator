@@ -1,12 +1,12 @@
 package resources
 
 import (
-	"github.com/docker/docker/client"
 	"github.com/go-logr/logr"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/k8sutil"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	linkerdv1alpha1 "github.com/spaghettifunk/linkerd2-operator/pkg/apis/linkerd/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ResourceWithDesiredState defines the desidered state based on the resources
@@ -44,13 +44,11 @@ func ResolveVariations(t string, v []ResourceVariationWithDesiredState, desiredS
 	resources := make([]ResourceWithDesiredState, 0)
 	for i := range v {
 		i := i
-
 		if v[i].DesiredState == k8sutil.DesiredStateAbsent || desiredState == k8sutil.DesiredStateAbsent {
 			state = k8sutil.DesiredStateAbsent
 		} else {
 			state = k8sutil.DesiredStatePresent
 		}
-
 		resource := ResourceWithDesiredState{
 			func() runtime.Object {
 				return v[i].ResourceVariation(t)
@@ -59,6 +57,5 @@ func ResolveVariations(t string, v []ResourceVariationWithDesiredState, desiredS
 		}
 		resources = append(resources, resource)
 	}
-
 	return resources
 }
