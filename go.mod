@@ -12,6 +12,7 @@ require (
 	k8s.io/apimachinery v0.18.2
 	k8s.io/client-go v12.0.0+incompatible
 	sigs.k8s.io/controller-runtime v0.6.0
+	github.com/docker/docker v1.4.2-0.20200203170920-46ec8731fbce
 )
 
 replace (
