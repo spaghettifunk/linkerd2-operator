@@ -1,5 +1,9 @@
 # Linkerd2 Operator
 
+## Project status
+
+The project is in active **development** and things are rapidly changing.
+
 ## Overview
 
 This Linkerd2 operator is a simple operator that takes care of deploying all the components of Linkerd2
