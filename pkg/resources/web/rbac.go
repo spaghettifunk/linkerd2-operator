@@ -10,13 +10,13 @@ import (
 
 func (r *Reconciler) serviceAccount() runtime.Object {
 	return &apiv1.ServiceAccount{
-		ObjectMeta: templates.ObjectMeta(serviceAccountName, r.GetLabels(), r.Config),
+		ObjectMeta: templates.ObjectMeta(serviceAccountName, r.labels(), r.Config),
 	}
 }
 
 func (r *Reconciler) clusterRole() runtime.Object {
 	return &rbacv1.ClusterRole{
-		ObjectMeta: templates.ObjectMetaClusterScope(clusterRoleName, r.GetLabels(), r.Config),
+		ObjectMeta: templates.ObjectMetaClusterScope(clusterRoleName, r.labels(), r.Config),
 		Rules: []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{"rbac.authorization.k8s.io"},
@@ -54,7 +54,7 @@ func (r *Reconciler) clusterRole() runtime.Object {
 
 func (r *Reconciler) clusterRoleBindingWebAdmin() runtime.Object {
 	return &rbacv1.ClusterRoleBinding{
-		ObjectMeta: templates.ObjectMetaClusterScope(clusterRoleBindingNameWebAdmin, r.GetLabels(), r.Config),
+		ObjectMeta: templates.ObjectMetaClusterScope(clusterRoleBindingNameWebAdmin, r.labels(), r.Config),
 		RoleRef: rbacv1.RoleRef{
 			Kind:     "ClusterRole",
 			APIGroup: "rbac.authorization.k8s.io",
@@ -72,7 +72,7 @@ func (r *Reconciler) clusterRoleBindingWebAdmin() runtime.Object {
 
 func (r *Reconciler) clusterRoleBindingWebCheck() runtime.Object {
 	return &rbacv1.ClusterRoleBinding{
-		ObjectMeta: templates.ObjectMetaClusterScope(clusterRoleBindingNameWebCheck, r.GetLabels(), r.Config),
+		ObjectMeta: templates.ObjectMetaClusterScope(clusterRoleBindingNameWebCheck, r.labels(), r.Config),
 		RoleRef: rbacv1.RoleRef{
 			Kind:     "ClusterRole",
 			APIGroup: "rbac.authorization.k8s.io",
@@ -90,7 +90,7 @@ func (r *Reconciler) clusterRoleBindingWebCheck() runtime.Object {
 
 func (r *Reconciler) role() runtime.Object {
 	return &rbacv1.Role{
-		ObjectMeta: templates.ObjectMetaClusterScope(roleName, r.GetLabels(), r.Config),
+		ObjectMeta: templates.ObjectMetaClusterScope(roleName, r.labels(), r.Config),
 		Rules: []rbacv1.PolicyRule{
 			{
 				APIGroups:     []string{""},

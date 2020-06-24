@@ -14,7 +14,7 @@ import (
 )
 
 func (r *Reconciler) deployment() runtime.Object {
-	labels := util.MergeStringMaps(r.GetLabels(), r.GetDeploymentLabels())
+	labels := util.MergeStringMaps(r.labels(), r.deploymentLabels())
 	return &appsv1.Deployment{
 		ObjectMeta: templates.ObjectMeta(deploymentName, labels, r.Config),
 		Spec: appsv1.DeploymentSpec{
@@ -132,6 +132,7 @@ func (r *Reconciler) container() []apiv1.Container {
 				webConfig.Resources,
 				webConfig.Resources,
 			),
+			// TODO: remove hardcoded values
 			Ports: []apiv1.ContainerPort{
 				{
 					Name:          "http",

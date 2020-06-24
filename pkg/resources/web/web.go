@@ -20,6 +20,7 @@ const (
 	clusterRoleBindingNameWebAdmin = "linkerd-web-admin"
 	deploymentName                 = "linkerd-web"
 	configMapName                  = "linkerd-web-config"
+	serviceName                    = "linkerd-web"
 )
 
 // Reconciler .
@@ -53,6 +54,7 @@ func (r *Reconciler) Reconcile(log logr.Logger) error {
 		{Resource: r.clusterRoleBindingWebAdmin, DesiredState: desiredState},
 		{Resource: r.configMap, DesiredState: desiredState},
 		{Resource: r.deployment, DesiredState: desiredState},
+		{Resource: r.service, DesiredState: desiredState},
 	} {
 		o := res.Resource()
 		err := k8sutil.Reconcile(log, r.Client, o, res.DesiredState)
@@ -66,19 +68,26 @@ func (r *Reconciler) Reconcile(log logr.Logger) error {
 	return nil
 }
 
-// GetLabels returns the labels for the web component
-func (r *Reconciler) GetLabels() map[string]string {
+// labels returns the labels for the web component
+func (r *Reconciler) labels() map[string]string {
 	return map[string]string{
 		"linkerd.io/control-plane-component": "web",
 		"linkerd.io/control-plane-ns":        r.Config.Namespace,
 	}
 }
 
-// GetDeploymentLabels returns the labels used for the deployment of the web component
-func (r *Reconciler) GetDeploymentLabels() map[string]string {
+// deploymentLabels returns the labels used for the deployment of the web component
+func (r *Reconciler) deploymentLabels() map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/name":    "web",
 		"app.kubernetes.io/part-of": "Linkerd",
 		"app.kubernetes.io/version": string(r.Config.Spec.Version),
+	}
+}
+
+// annotations returns the annotations labels for the web component
+func (r *Reconciler) annotations() map[string]string {
+	return map[string]string{
+		"linkerd.io/created-by": string(r.Config.Spec.Version),
 	}
 }
