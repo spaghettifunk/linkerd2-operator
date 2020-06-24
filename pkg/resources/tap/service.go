@@ -1,4 +1,4 @@
-package web
+package tap
 
 import (
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/templates"
@@ -13,17 +13,21 @@ func (r *Reconciler) service() runtime.Object {
 		ObjectMeta: templates.ObjectMetaWithAnnotations(serviceName, r.labels(), templates.DefaultAnnotations(string(r.Config.Spec.Version)), r.Config),
 		Spec: apiv1.ServiceSpec{
 			Type: apiv1.ServiceTypeClusterIP,
+			// TODO: fix hardcoded values
+			Selector: map[string]string{
+				"linkerd.io/control-plane-component": "tap",
+			},
 			// TODO: remove hardcoded values
 			Ports: []apiv1.ServicePort{
 				{
-					Name:       "http",
-					Port:       int32(8084),
-					TargetPort: intstr.FromString("8084"),
+					Name:       "grpc",
+					Port:       int32(8088),
+					TargetPort: intstr.FromString("8088"),
 				},
 				{
-					Name:       "admin-http",
-					Port:       int32(9994),
-					TargetPort: intstr.FromString("9994"),
+					Name:       "apiserver",
+					Port:       int32(443),
+					TargetPort: intstr.FromString("apiserver"),
 				},
 			},
 		},

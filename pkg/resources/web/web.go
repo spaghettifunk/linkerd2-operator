@@ -84,10 +84,3 @@ func (r *Reconciler) deploymentLabels() map[string]string {
 		"app.kubernetes.io/version": string(r.Config.Spec.Version),
 	}
 }
-
-// annotations returns the annotations labels for the web component
-func (r *Reconciler) annotations() map[string]string {
-	return map[string]string{
-		"linkerd.io/created-by": string(r.Config.Spec.Version),
-	}
-}

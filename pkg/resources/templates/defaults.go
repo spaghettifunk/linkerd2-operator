@@ -8,9 +8,11 @@ import (
 	"github.com/spaghettifunk/linkerd2-operator/pkg/util"
 )
 
-// DefaultDeployAnnotations are the default annotations for deployments
-func DefaultDeployAnnotations() map[string]string {
-	return map[string]string{}
+// DefaultAnnotations are the default annotations for deployments
+func DefaultAnnotations(version string) map[string]string {
+	return map[string]string{
+		"linkerd.io/created-by": version,
+	}
 }
 
 // GetResourcesRequirementsOrDefault sets the new resources constraints or use the defaults

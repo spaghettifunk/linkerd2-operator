@@ -7,6 +7,9 @@ import (
 	"github.com/goph/emperror"
 	"github.com/pkg/errors"
 	linkerdv1alpha1 "github.com/spaghettifunk/linkerd2-operator/pkg/apis/linkerd/v1alpha1"
+	"github.com/spaghettifunk/linkerd2-operator/pkg/resources"
+	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/tap"
+	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/web"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
@@ -132,8 +135,23 @@ func (r *ReconcileLinkerd) reconcile(logger logr.Logger, config *linkerdv1alpha1
 	}
 
 	// for each component do a reconciliation
-	// ..
+	reconcilers := []resources.ComponentReconciler{
+		web.New(r.Client, config),
+		tap.New(r.Client, config),
+	}
 
+	for _, rec := range reconcilers {
+		err := rec.Reconcile(logger)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
+
+	err := updateStatus(r.Client, config, linkerdv1alpha1.Available, "", logger)
+	if err != nil {
+		return reconcile.Result{}, errors.WithStack(err)
+	}
+	logger.Info("reconcile finished")
 	return reconcile.Result{}, nil
 }
 

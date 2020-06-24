@@ -29,7 +29,7 @@ func (r *Reconciler) deployment() runtime.Object {
 			Template: apiv1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      labels,
-					Annotations: templates.DefaultDeployAnnotations(),
+					Annotations: templates.DefaultAnnotations(string(r.Config.Spec.Version)),
 				},
 				Spec: apiv1.PodSpec{
 					DNSPolicy:     apiv1.DNSClusterFirst,

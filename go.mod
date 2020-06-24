@@ -12,6 +12,7 @@ require (
 	k8s.io/apimachinery v0.18.2
 	k8s.io/client-go v12.0.0+incompatible
 	sigs.k8s.io/controller-runtime v0.6.0
+	k8s.io/kube-aggregator v0.18.4
 )
 
 replace (
