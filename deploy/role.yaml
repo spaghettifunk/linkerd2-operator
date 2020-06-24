@@ -70,6 +70,8 @@ rules:
   - linkerd.io
   resources:
   - '*'
+  - trafficsplits
+  - serviceprofiles
   verbs:
   - create
   - delete

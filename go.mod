@@ -8,11 +8,12 @@ require (
 	github.com/operator-framework/operator-sdk v0.18.1
 	github.com/pkg/errors v0.9.1
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
-	k8s.io/api v0.18.2
-	k8s.io/apimachinery v0.18.2
+	k8s.io/api v0.18.4
+	k8s.io/apiextensions-apiserver v0.18.2
+	k8s.io/apimachinery v0.18.4
 	k8s.io/client-go v12.0.0+incompatible
-	sigs.k8s.io/controller-runtime v0.6.0
 	k8s.io/kube-aggregator v0.18.4
+	sigs.k8s.io/controller-runtime v0.6.0
 )
 
 replace (

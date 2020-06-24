@@ -8,7 +8,10 @@ import (
 	"github.com/pkg/errors"
 	linkerdv1alpha1 "github.com/spaghettifunk/linkerd2-operator/pkg/apis/linkerd/v1alpha1"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources"
+	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/psp"
+	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/serviceprofile"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/tap"
+	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/trafficsplit"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/web"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/util"
 	corev1 "k8s.io/api/core/v1"
@@ -136,10 +139,12 @@ func (r *ReconcileLinkerd) reconcile(logger logr.Logger, config *linkerdv1alpha1
 
 	// for each component do a reconciliation
 	reconcilers := []resources.ComponentReconciler{
+		serviceprofile.New(r.Client, config),
+		trafficsplit.New(r.Client, config),
 		web.New(r.Client, config),
 		tap.New(r.Client, config),
+		psp.New(r.Client, config),
 	}
-
 	for _, rec := range reconcilers {
 		err := rec.Reconcile(logger)
 		if err != nil {
@@ -151,7 +156,9 @@ func (r *ReconcileLinkerd) reconcile(logger logr.Logger, config *linkerdv1alpha1
 	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
+
 	logger.Info("reconcile finished")
+
 	return reconcile.Result{}, nil
 }
 
