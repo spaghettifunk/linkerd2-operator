@@ -13,8 +13,8 @@ import (
 const (
 	componentName          = "controller"
 	serviceAccountName     = "linkerd-controller"
-	clusterRoleName        = ""
-	clusterRoleBindingName = ""
+	clusterRoleName        = "linkerd-controller"
+	clusterRoleBindingName = "linkerd-controller"
 	deploymentName         = "linkerd-controller"
 	serviceName            = "linkerd-controller-api"
 )

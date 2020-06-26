@@ -1,4 +1,4 @@
-package controller
+package destination
 
 import (
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/templates"
@@ -19,18 +19,18 @@ func (r *Reconciler) clusterRole() runtime.Object {
 		ObjectMeta: templates.ObjectMetaClusterScope(clusterRoleName, r.labels(), r.Config),
 		Rules: []rbacv1.PolicyRule{
 			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"replicasets"},
+				APIGroups: []string{"extensions", "apps"},
+				Resources: []string{"daemonsets", "deployments", "replicasets", "statefulsets"},
 				Verbs:     []string{"list", "get", "watch"},
 			},
 			{
-				APIGroups: []string{"batch"},
-				Resources: []string{"jobs"},
+				APIGroups: []string{"extensions", "batch"},
+				Resources: []string{"cronjobs", "jobs"},
 				Verbs:     []string{"list", "get", "watch"},
 			},
 			{
 				APIGroups: []string{""},
-				Resources: []string{"pods", "endpoints", "services"},
+				Resources: []string{"pods", "endpoints", "services", "replicationcontrollers", "namespaces"},
 				Verbs:     []string{"list", "get", "watch"},
 			},
 			{
