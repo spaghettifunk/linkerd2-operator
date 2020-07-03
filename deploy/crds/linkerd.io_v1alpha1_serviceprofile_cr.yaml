@@ -1,7 +1,0 @@
-apiVersion: linkerd.io/v1alpha1
-kind: ServiceProfile
-metadata:
-  name: example-serviceprofile
-spec:
-  # Add fields here
-  size: 3

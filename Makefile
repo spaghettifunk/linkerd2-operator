@@ -51,7 +51,7 @@ code-gen: ## Run the operator-sdk commands to generated code (k8s and openapi)
 	@echo Updating the deep copy files with the changes in the API
 	operator-sdk generate k8s
 	@echo Updating the CRD files with the OpenAPI validations
-	operator-sdk generate openapi
+	operator-sdk generate crds
 
 ##@ Tests
 
