@@ -1,4 +1,5 @@
 .DEFAULT_GOAL:=help
+VERSION=latest
 SHELL:=/bin/bash
 NAMESPACE=linkerd
 
@@ -33,21 +34,21 @@ uninstall: ## Uninstall all that all performed in the $ make install
 
 ##@ Development
 
-code-vet: ## Run go vet for this project. More info: https://golang.org/cmd/vet/
+vet: ## Run go vet for this project. More info: https://golang.org/cmd/vet/
 	@echo go vet
 	go vet $$(go list ./... )
 
-code-fmt: ## Run go fmt for this project
+fmt: ## Run go fmt for this project
 	@echo go fmt
 	go fmt $$(go list ./... )
 
-code-dev: ## Run the default dev commands which are the go fmt and vet then execute the $ make code-gen
+dev: ## Run the default dev commands which are the go fmt and vet then execute the $ make code-gen
 	@echo Running the common required commands for developments purposes
-	- make code-fmt
-	- make code-vet
-	- make code-gen
+	- make fmt
+	- make vet
+	- make codegen
 
-code-gen: ## Run the operator-sdk commands to generated code (k8s and openapi)
+codegen: ## Run the operator-sdk commands to generated code (k8s and openapi)
 	@echo Updating the deep copy files with the changes in the API
 	operator-sdk generate k8s
 	@echo Updating the CRD files with the OpenAPI validations
@@ -70,6 +71,16 @@ test-e2e: ## Run integration e2e tests with different options.
 	- operator-sdk test local ./test/e2e --debug
 	@echo ... Running with the --verbose param ...
 	- operator-sdk test local ./test/e2e --verbose
+
+.PHONY: release
+release:
+	git tag "v$(VERSION)"
+	git push origin "v$(VERSION)"
+
+.PHONY: release-note
+release-notes:
+	cd /tmp && GH_REL_URL="https://github.com/buchanae/github-release-notes/releases/download/0.2.0/github-release-notes-linux-amd64-0.2.0.tar.gz" && \
+    curl -sSL $${GH_REL_URL} | tar xz && sudo mv github-release-notes /usr/local/bin/
 
 .PHONY: help
 help: ## Display this help

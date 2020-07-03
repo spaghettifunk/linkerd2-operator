@@ -13,6 +13,8 @@ import (
 	"github.com/spaghettifunk/linkerd2-operator/pkg/controller"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/k8sutil"
 
+	_ "k8s.io/code-generator/cmd/client-gen/generators"
+
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
