@@ -1,8 +1,8 @@
 # Linkerd2 Operator
 
-## Project status
+## :warning: Project status (pre-alpha)
 
-The project is in active **development** and things are rapidly changing.
+The project is in active **development** and things are rapidly changing. 
 
 ## Overview
 
