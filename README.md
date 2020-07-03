@@ -1,8 +1,11 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/spaghettifunk/linkerd2-operator)](https://goreportcard.com/report/github.com/spaghettifunk/linkerd2-operator)
+[![codecov](https://codecov.io/gh/spaghettifunk/linkerd2-operator/branch/main/graph/badge.svg)](https://codecov.io/gh/spaghettifunk/linkerd2-operator)
+
 # Linkerd2 Operator
 
 ## :warning: Project status (pre-alpha)
 
-The project is in active **development** and things are rapidly changing. 
+The project is in active **development** and things are rapidly changing.
 
 ## Overview
 
@@ -28,6 +31,7 @@ $ cd $GOPATH/src/github.com/spaghettifunk
 $ git clone https://github.com/spaghettifunk/linkerd2-operator.git
 $ cd linkerd2-operator
 ```
+
 ### Pulling the dependencies
 
 Run the following command
