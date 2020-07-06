@@ -99,10 +99,10 @@ func main() {
 	time.Sleep(waitBeforeExitDuration)
 
 	// Cleanup
-	// log.Info("removing finalizer from Istio resources")
+	// log.Info("removing finalizer from Linkerd resources")
 	// err = linkerd.RemoveFinalizers(mgr.GetClient())
 	// if err != nil {
-	// 	log.Error(err, "could not remove finalizers from Istio resources")
+	// 	log.Error(err, "could not remove finalizers from Linkerd resources")
 	// }
 }
 

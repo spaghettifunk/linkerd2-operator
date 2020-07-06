@@ -8,6 +8,12 @@ import (
 	"github.com/pkg/errors"
 	linkerdv1alpha1 "github.com/spaghettifunk/linkerd2-operator/pkg/apis/linkerd/v1alpha1"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources"
+	linkerdcontroller "github.com/spaghettifunk/linkerd2-operator/pkg/resources/controller"
+	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/destination"
+	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/heartbeat"
+	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/identity"
+	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/prometheus"
+	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/proxyinjector"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/psp"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/serviceprofile"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/tap"
@@ -71,9 +77,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-// blank assignment to verify that ReconcileLinkerd implements reconcile.Reconciler
-var _ reconcile.Reconciler = &ReconcileLinkerd{}
-
 // ReconcileLinkerd reconciles a Linkerd object
 type ReconcileLinkerd struct {
 	// This client, initialized using mgr.Client() above, is a split client
@@ -106,7 +109,7 @@ func (r *ReconcileLinkerd) Reconcile(request reconcile.Request) (reconcile.Resul
 	logger.Info("Reconciling Linkerd")
 
 	if !config.Spec.Version.IsSupported() {
-		err = errors.New("intended Istio version is unsupported by this version of the operator")
+		err = errors.New("intended Linkerd version is unsupported by this version of the operator")
 		logger.Error(err, "", "version", config.Spec.Version)
 		return reconcile.Result{
 			Requeue: false,
@@ -124,7 +127,7 @@ func (r *ReconcileLinkerd) Reconcile(request reconcile.Request) (reconcile.Resul
 			logger.Error(updateErr, "failed to update state")
 			return result, errors.WithStack(err)
 		}
-		return result, emperror.Wrap(err, "could not reconcile istio")
+		return result, emperror.Wrap(err, "could not reconcile Linkerd")
 	}
 	return result, nil
 }
@@ -139,6 +142,12 @@ func (r *ReconcileLinkerd) reconcile(logger logr.Logger, config *linkerdv1alpha1
 
 	// for each component do a reconciliation
 	reconcilers := []resources.ComponentReconciler{
+		linkerdcontroller.New(r.Client, config),
+		destination.New(r.Client, config),
+		heartbeat.New(r.Client, config),
+		identity.New(r.Client, config),
+		prometheus.New(r.Client, config),
+		proxyinjector.New(r.Client, config),
 		serviceprofile.New(r.Client, config),
 		trafficsplit.New(r.Client, config),
 		web.New(r.Client, config),
@@ -163,27 +172,34 @@ func (r *ReconcileLinkerd) reconcile(logger logr.Logger, config *linkerdv1alpha1
 }
 
 func updateStatus(c client.Client, config *linkerdv1alpha1.Linkerd, status linkerdv1alpha1.ConfigState, errorMessage string, logger logr.Logger) error {
+
 	typeMeta := config.TypeMeta
 	config.Status.Status = status
 	config.Status.ErrorMessage = errorMessage
+
 	err := c.Status().Update(context.Background(), config)
 	if k8errors.IsNotFound(err) {
 		err = c.Update(context.Background(), config)
 	}
+
 	if err != nil {
 		if !k8errors.IsConflict(err) {
 			return emperror.Wrapf(err, "could not update Linkerd state to '%s'", status)
 		}
+
 		var actualConfig linkerdv1alpha1.Linkerd
 		err := c.Get(context.TODO(), types.NamespacedName{
 			Namespace: config.Namespace,
 			Name:      config.Name,
 		}, &actualConfig)
+
 		if err != nil {
 			return emperror.Wrap(err, "could not get config for updating status")
 		}
+
 		actualConfig.Status.Status = status
 		actualConfig.Status.ErrorMessage = errorMessage
+
 		err = c.Status().Update(context.Background(), &actualConfig)
 		if k8errors.IsNotFound(err) {
 			err = c.Update(context.Background(), &actualConfig)
@@ -192,9 +208,11 @@ func updateStatus(c client.Client, config *linkerdv1alpha1.Linkerd, status linke
 			return emperror.Wrapf(err, "could not update Linkerd state to '%s'", status)
 		}
 	}
+
 	// update loses the typeMeta of the config that's used later when setting ownerrefs
 	config.TypeMeta = typeMeta
 	logger.Info("Linkerd state updated", "status", status)
+
 	return nil
 }
 

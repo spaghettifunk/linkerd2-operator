@@ -21,8 +21,8 @@ func (r *Reconciler) configMap() runtime.Object {
 func (r *Reconciler) networkConfig() string {
 	config := map[string]interface{}{
 		"cniVersion": "0.3.1",
-		"name":       "istio-cni",
-		"type":       "istio-cni",
+		"name":       "linekrd-cni",
+		"type":       "linekrd-cni",
 		// "log_level":  r.Config.Spec.SidecarInjector.InitCNIConfiguration.LogLevel,
 		"kubernetes": map[string]interface{}{
 			"kubeconfig": "__KUBECONFIG_FILEPATH__",
