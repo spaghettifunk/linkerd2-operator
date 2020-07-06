@@ -4,9 +4,14 @@ package v1alpha1
 type ConfigState string
 
 const (
-	Created         ConfigState = "Created"
+	// Created status after the initialization
+	Created ConfigState = "Created"
+	// ReconcileFailed status when an error happened
 	ReconcileFailed ConfigState = "ReconcileFailed"
-	Reconciling     ConfigState = "Reconciling"
-	Available       ConfigState = "Available"
-	Unmanaged       ConfigState = "Unmanaged"
+	// Reconciling status when the reconciliation loop is started
+	Reconciling ConfigState = "Reconciling"
+	// Available status when the resources are created successfully
+	Available ConfigState = "Available"
+	// Unmanaged status when the system is not sure what to do
+	Unmanaged ConfigState = "Unmanaged"
 )

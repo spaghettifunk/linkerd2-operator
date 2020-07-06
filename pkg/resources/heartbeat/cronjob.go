@@ -14,6 +14,7 @@ import (
 
 func (r *Reconciler) cronjob() runtime.Object {
 	labels := util.MergeStringMaps(r.labels(), r.deploymentLabels())
+	heartbeatConfig := r.Config.Spec.Heartbeat
 	return &batchv1.CronJob{
 		ObjectMeta: templates.ObjectMetaWithAnnotations(
 			cronjobName,
@@ -38,7 +39,7 @@ func (r *Reconciler) cronjob() runtime.Object {
 								{
 									Name:            componentName,
 									Image:           *r.Config.Spec.Heartbeat.Image,
-									ImagePullPolicy: core.PullAlways,
+									ImagePullPolicy: core.PullIfNotPresent,
 									Args: []string{
 										"heartbeat",
 										fmt.Sprintf("-prometheus-url=http://linkerd-prometheus.%s.svc.%s:9090", r.Config.Namespace, "cluster.local"),
@@ -48,8 +49,7 @@ func (r *Reconciler) cronjob() runtime.Object {
 									SecurityContext: &core.SecurityContext{
 										RunAsUser: util.Int64Pointer(2103),
 									},
-									// TODO: add default resources here
-									Resources: core.ResourceRequirements{},
+									Resources: heartbeatConfig.Resources,
 								},
 							},
 						},

@@ -3,11 +3,42 @@ package v1alpha1
 import (
 	"regexp"
 
+	"github.com/spaghettifunk/linkerd2-operator/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/kubernetes/pkg/apis/core"
 )
 
 const supportedLinkerdMinorVersionRegex = "^2.*"
+
+// ServicePort extends the corev1 ServicePort object
+type ServicePort struct {
+	corev1.ServicePort `json:",inline"`
+	TargetPort         *int32 `json:"targetPort,omitempty"`
+}
+
+// ServicePorts is an array of ServicePort
+type ServicePorts []ServicePort
+
+// Convert wraps the corev1.ServicePort object into a ServicePort
+func (ps ServicePorts) Convert() []corev1.ServicePort {
+	ports := make([]corev1.ServicePort, 0)
+	for _, po := range ps {
+		port := corev1.ServicePort{
+			Name:     po.Name,
+			Protocol: po.Protocol,
+			Port:     po.Port,
+			NodePort: po.NodePort,
+		}
+		if po.TargetPort != nil {
+			port.TargetPort = intstr.FromInt(int(util.PointerToInt32(po.TargetPort)))
+		}
+		ports = append(ports, port)
+	}
+
+	return ports
+}
 
 // BaseK8sResourceConfiguration defines basic K8s resource spec configurations
 type BaseK8sResourceConfiguration struct {
@@ -35,6 +66,8 @@ type DestinationConfiguration struct {
 // This is a CronJob type
 type HeartbeatConfiguration struct {
 	BaseK8sResourceConfiguration `json:",inline"`
+	// Override resources since it's of another type
+	Resources core.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // IdentityConfiguration defines the k8s spec configuration for the linkerd identity
@@ -78,6 +111,9 @@ type LinkerdSpec struct {
 	Size int32 `json:"size"`
 	// LogLevel is the log level for the linkerd controller
 	LogLevel string `json:"logLevel"`
+	// SelfSignedCertificates determines if the user is going to supply the certificates or if the operator needs to generate new ones
+	SelfSignedCertificates bool `json:"slefSignedCerts"`
+
 	// List of namespaces to label with sidecar auto injection enabled
 	AutoInjectionNamespaces []string `json:"autoInjectionNamespaces,omitempty"`
 	// ImagePullPolicy describes a policy for if/when to pull a container image

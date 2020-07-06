@@ -80,34 +80,12 @@ func (r *Reconciler) containers() []apiv1.Container {
 			Image:           *controllerConfig.Image,
 			ImagePullPolicy: r.Config.Spec.ImagePullPolicy,
 			Args:            args,
-			LivenessProbe: &apiv1.Probe{
-				InitialDelaySeconds: int32(10),
-				Handler: apiv1.Handler{
-					HTTPGet: &apiv1.HTTPGetAction{
-						Path: "/ping",
-						Port: intstr.FromString("9995"),
-					},
-				},
-			},
-			ReadinessProbe: &apiv1.Probe{
-				FailureThreshold: int32(7),
-				Handler: apiv1.Handler{
-					HTTPGet: &apiv1.HTTPGetAction{
-						Path: "/ready",
-						Port: intstr.FromString("9995"),
-					},
-				},
-			},
-			Resources: templates.GetResourcesRequirementsOrDefault(nil, nil),
+			LivenessProbe:   templates.DefaultLivenessProbe("/ping", "9995", 10, 30),
+			ReadinessProbe:  templates.DefaultReadinessProbe("/ready", "9995", 7, 30),
+			Resources:       *controllerConfig.Resources,
 			Ports: []apiv1.ContainerPort{
-				{
-					Name:          "http",
-					ContainerPort: int32(8085),
-				},
-				{
-					Name:          "admin-http",
-					ContainerPort: int32(9995),
-				},
+				templates.DefaultContainerPort("http", 8085),
+				templates.DefaultContainerPort("admin-http", 9995),
 			},
 			SecurityContext: &apiv1.SecurityContext{
 				RunAsUser: util.Int64Pointer(2103),

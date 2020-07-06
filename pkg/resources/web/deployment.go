@@ -6,7 +6,6 @@ import (
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/templates"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/util"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/intstr"
 
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
@@ -100,50 +99,12 @@ func (r *Reconciler) container() []apiv1.Container {
 			Image:           *webConfig.Image,
 			ImagePullPolicy: r.Config.Spec.ImagePullPolicy,
 			Args:            args,
-			LivenessProbe: &apiv1.Probe{
-				FailureThreshold:    3,
-				TimeoutSeconds:      1,
-				SuccessThreshold:    1,
-				PeriodSeconds:       10,
-				InitialDelaySeconds: 10,
-				Handler: apiv1.Handler{
-					HTTPGet: &apiv1.HTTPGetAction{
-						Path:   "/ping",
-						Port:   intstr.FromInt(9994),
-						Scheme: apiv1.URIScheme("HTTP"),
-					},
-				},
-			},
-			ReadinessProbe: &apiv1.Probe{
-				FailureThreshold: 7,
-				PeriodSeconds:    10,
-				SuccessThreshold: 1,
-				TimeoutSeconds:   1,
-				Handler: apiv1.Handler{
-					HTTPGet: &apiv1.HTTPGetAction{
-						Path:   "/ready",
-						Port:   intstr.FromInt(9994),
-						Scheme: apiv1.URIScheme("HTTP"),
-					},
-				},
-			},
-			// TODO: fix with defaults
-			Resources: templates.GetResourcesRequirementsOrDefault(
-				webConfig.Resources,
-				webConfig.Resources,
-			),
-			// TODO: remove hardcoded values
+			LivenessProbe:   templates.DefaultLivenessProbe("/ping", "9994", 10, 1),
+			ReadinessProbe:  templates.DefaultReadinessProbe("/ready", "9994", 7, 1),
+			Resources:       *webConfig.Resources,
 			Ports: []apiv1.ContainerPort{
-				{
-					Name:          "http",
-					Protocol:      apiv1.Protocol("TCP"),
-					ContainerPort: 8084,
-				},
-				{
-					Name:          "admin-http",
-					Protocol:      apiv1.Protocol("TCP"),
-					ContainerPort: 9994,
-				},
+				templates.DefaultContainerPort("http", 8084),
+				templates.DefaultContainerPort("admin-http", 9994),
 			},
 			VolumeMounts: []apiv1.VolumeMount{
 				{

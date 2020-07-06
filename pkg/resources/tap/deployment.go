@@ -82,38 +82,13 @@ func (r *Reconciler) containers() []apiv1.Container {
 			Image:           *tapConfig.Image,
 			ImagePullPolicy: r.Config.Spec.ImagePullPolicy,
 			Args:            args,
-			LivenessProbe: &apiv1.Probe{
-				InitialDelaySeconds: int32(10),
-				Handler: apiv1.Handler{
-					HTTPGet: &apiv1.HTTPGetAction{
-						Path: "/ping",
-						Port: intstr.FromString("9998"),
-					},
-				},
-			},
-			ReadinessProbe: &apiv1.Probe{
-				FailureThreshold: int32(7),
-				Handler: apiv1.Handler{
-					HTTPGet: &apiv1.HTTPGetAction{
-						Path: "/ready",
-						Port: intstr.FromString("9998"),
-					},
-				},
-			},
-			Resources: templates.GetResourcesRequirementsOrDefault(nil, nil),
+			LivenessProbe:   templates.DefaultLivenessProbe("/ping", "9998", 10, 30),
+			ReadinessProbe:  templates.DefaultReadinessProbe("/ready", "9998", 7, 30),
+			Resources:       *tapConfig.Resources,
 			Ports: []apiv1.ContainerPort{
-				{
-					Name:          "grpc",
-					ContainerPort: int32(8088),
-				},
-				{
-					Name:          "apiserver",
-					ContainerPort: int32(8089),
-				},
-				{
-					Name:          "admin-http",
-					ContainerPort: int32(9998),
-				},
+				templates.DefaultContainerPort("grpc", 8088),
+				templates.DefaultContainerPort("apiserver", 8089),
+				templates.DefaultContainerPort("admin-http", 9998),
 			},
 			SecurityContext: &apiv1.SecurityContext{
 				RunAsUser: util.Int64Pointer(2103),

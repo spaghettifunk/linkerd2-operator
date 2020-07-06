@@ -3,7 +3,6 @@ package proxyinjector
 import (
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/templates"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/util"
-	"k8s.io/apimachinery/pkg/api/resource"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -115,50 +114,23 @@ func (r *Reconciler) deployment() runtime.Object {
 }
 
 func (r *Reconciler) containers() []apiv1.Container {
-	identityConfig := r.Config.Spec.Identity
+	proxyInjectorConfig := r.Config.Spec.ProxyInjector
 	containers := []apiv1.Container{
+		templates.DefaultProxyContainer(),
 		{
 			Name:            "proxy-injector",
-			Image:           *identityConfig.Image,
+			Image:           *proxyInjectorConfig.Image,
 			ImagePullPolicy: r.Config.Spec.ImagePullPolicy,
-			Args:            []string{"proxy-injector", "-log-level=info"},
-			LivenessProbe: &apiv1.Probe{
-				InitialDelaySeconds: int32(10),
-				Handler: apiv1.Handler{
-					HTTPGet: &apiv1.HTTPGetAction{
-						Path: "/ping",
-						Port: intstr.FromString("9995"),
-					},
-				},
+			Args: []string{
+				"proxy-injector",
+				"-log-level=info",
 			},
-			ReadinessProbe: &apiv1.Probe{
-				FailureThreshold: int32(7),
-				Handler: apiv1.Handler{
-					HTTPGet: &apiv1.HTTPGetAction{
-						Path: "/ready",
-						Port: intstr.FromString("9995"),
-					},
-				},
-			},
-			Resources: apiv1.ResourceRequirements{
-				Limits: apiv1.ResourceList{
-					apiv1.ResourceCPU:    resource.MustParse("1"),
-					apiv1.ResourceMemory: resource.MustParse("250Mi"),
-				},
-				Requests: apiv1.ResourceList{
-					apiv1.ResourceCPU:    resource.MustParse("100m"),
-					apiv1.ResourceMemory: resource.MustParse("50Mi"),
-				},
-			},
+			LivenessProbe:  templates.DefaultLivenessProbe("/ping", "9995", 10, 30),
+			ReadinessProbe: templates.DefaultReadinessProbe("/ready", "9995", 7, 30),
+			Resources:      *proxyInjectorConfig.Resources,
 			Ports: []apiv1.ContainerPort{
-				{
-					Name:          "proxy-injector",
-					ContainerPort: int32(8443),
-				},
-				{
-					Name:          "admin-http",
-					ContainerPort: int32(9995),
-				},
+				templates.DefaultContainerPort("proxy-injector", 8443),
+				templates.DefaultContainerPort("admin-http", 9995),
 			},
 			SecurityContext: &apiv1.SecurityContext{
 				RunAsUser: util.Int64Pointer(2103),
@@ -176,157 +148,6 @@ func (r *Reconciler) containers() []apiv1.Container {
 			},
 			TerminationMessagePath:   apiv1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: apiv1.TerminationMessageReadFile,
-		},
-		// TODO: export this container among the defaults
-		{
-			Name:            "linkerd-proxy",
-			Image:           "gcr.io/linkerd-io/proxy:stable-2.8.1",
-			ImagePullPolicy: apiv1.PullIfNotPresent,
-			Resources: apiv1.ResourceRequirements{
-				Limits: apiv1.ResourceList{
-					apiv1.ResourceCPU:    resource.MustParse("1"),
-					apiv1.ResourceMemory: resource.MustParse("250Mi"),
-				},
-				Requests: apiv1.ResourceList{
-					apiv1.ResourceCPU:    resource.MustParse("100m"),
-					apiv1.ResourceMemory: resource.MustParse("20Mi"),
-				},
-			},
-			VolumeMounts: []apiv1.VolumeMount{
-				{
-					Name:      "linkerd-identity-end-entity",
-					MountPath: "/var/run/linkerd/identity/end-entity",
-				},
-			},
-			LivenessProbe: &apiv1.Probe{
-				Handler: apiv1.Handler{
-					HTTPGet: &apiv1.HTTPGetAction{
-						Path: "/live",
-						Port: intstr.FromString("4191"),
-					},
-				},
-				InitialDelaySeconds: int32(10),
-			},
-			ReadinessProbe: &apiv1.Probe{
-				Handler: apiv1.Handler{
-					HTTPGet: &apiv1.HTTPGetAction{
-						Path: "/ready",
-						Port: intstr.FromString("4191"),
-					},
-				},
-				InitialDelaySeconds: int32(2),
-			},
-			SecurityContext: &apiv1.SecurityContext{
-				RunAsUser:              util.Int64Pointer(2102),
-				ReadOnlyRootFilesystem: util.BoolPointer(true),
-			},
-			Env: []apiv1.EnvVar{
-				{
-					Name:  "LINKERD2_PROXY_LOG",
-					Value: "warn,linkerd=info",
-				},
-				{
-					Name:  "LINKERD2_PROXY_DESTINATION_SVC_ADDR",
-					Value: "linkerd-dst.linkerd.svc.cluster.local:8086",
-				},
-				{
-					Name:  "LINKERD2_PROXY_DESTINATION_GET_NETWORKS",
-					Value: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16",
-				},
-				{
-					Name:  "LINKERD2_PROXY_CONTROL_LISTEN_ADDR",
-					Value: "0.0.0.0:4190",
-				},
-				{
-					Name:  "LINKERD2_PROXY_ADMIN_LISTEN_ADDR",
-					Value: "0.0.0.0:4191",
-				},
-				{
-					Name:  "LINKERD2_PROXY_OUTBOUND_LISTEN_ADDR",
-					Value: "127.0.0.1:4140",
-				},
-				{
-					Name:  "LINKERD2_PROXY_INBOUND_LISTEN_ADDR",
-					Value: "0.0.0.0:4143",
-				},
-				{
-					Name:  "LINKERD2_PROXY_DESTINATION_GET_SUFFIXES",
-					Value: "svc.cluster.local.",
-				},
-				{
-					Name:  "LINKERD2_PROXY_DESTINATION_PROFILE_SUFFIXES",
-					Value: "svc.cluster.local.",
-				},
-				{
-					Name:  "LINKERD2_PROXY_INBOUND_ACCEPT_KEEPALIVE",
-					Value: "10000ms",
-				},
-				{
-					Name:  "LINKERD2_PROXY_OUTBOUND_CONNECT_KEEPALIVE",
-					Value: "10000ms",
-				},
-				{
-					Name: "_pod_ns",
-					ValueFrom: &apiv1.EnvVarSource{
-						FieldRef: &apiv1.ObjectFieldSelector{
-							FieldPath: "metadata.namespace",
-						},
-					},
-				},
-				{
-					Name:  "LINKERD2_PROXY_DESTINATION_CONTEXT",
-					Value: "ns:$(_pod_ns)",
-				},
-				{
-					Name:  "LINKERD2_PROXY_IDENTITY_DIR",
-					Value: "/var/run/linkerd/identity/end-entity",
-				},
-				{
-					// TODO: pass the correct .cert file
-					Name:  "LINKERD2_PROXY_IDENTITY_TRUST_ANCHORS",
-					Value: "",
-				},
-				{
-					Name:  "LINKERD2_PROXY_IDENTITY_TOKEN_FILE",
-					Value: "/var/run/secrets/kubernetes.io/serviceaccount/token",
-				},
-				{
-					Name:  "LINKERD2_PROXY_IDENTITY_SVC_ADDR",
-					Value: "localhost.:8080",
-				},
-				{
-					Name: "_pod_sa",
-					ValueFrom: &apiv1.EnvVarSource{
-						FieldRef: &apiv1.ObjectFieldSelector{
-							FieldPath: "spec.serviceAccountName",
-						},
-					},
-				},
-				{
-					Name:  "_l5d_ns",
-					Value: "linkerd",
-				},
-				{
-					Name:  "_l5d_trustdomain",
-					Value: "cluster.local",
-				},
-				{
-					Name:  "LINKERD2_PROXY_IDENTITY_LOCAL_NAME",
-					Value: "$(_pod_sa).$(_pod_ns).serviceaccount.identity.$(_l5d_ns).$(_l5d_trustdomain)",
-				},
-				{
-					Name:  "LINKERD2_PROXY_IDENTITY_SVC_NAME",
-					Value: "linkerd-identity.$(_l5d_ns).serviceaccount.identity.$(_l5d_ns).$(_l5d_trustdomain)",
-				},
-				{
-					Name:  "LINKERD2_PROXY_DESTINATION_SVC_NAME",
-					Value: "linkerd-destination.$(_l5d_ns).serviceaccount.identity.$(_l5d_ns).$(_l5d_trustdomain)",
-				},
-				{
-					Name:  "LINKERD2_PROXY_TAP_SVC_NAME",
-					Value: "linkerd-tap.$(_l5d_ns).serviceaccount.identity.$(_l5d_ns).$(_l5d_trustdomain)",
-				},
-			},
 		},
 	}
 	return containers
