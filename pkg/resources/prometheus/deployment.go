@@ -73,9 +73,9 @@ func (r *Reconciler) containers() []apiv1.Container {
 				"--config.file=/etc/prometheus/prometheus.yml",
 				"--log.level=info",
 			},
-			LivenessProbe:  templates.DefaultLivenessProbe("/-/healthy", "9090", 30, 30),
-			ReadinessProbe: templates.DefaultReadinessProbe("/-/ready", "9090", 30, 30),
-			Resources:      *prometheusConfig.Resources,
+			// LivenessProbe:  templates.DefaultLivenessProbe("/-/healthy", "9090", 30, 30),
+			// ReadinessProbe: templates.DefaultReadinessProbe("/-/ready", "9090", 30, 30),
+			Resources: *prometheusConfig.Resources,
 			Ports: []apiv1.ContainerPort{
 				templates.DefaultContainerPort("admin-http", 9090),
 			},

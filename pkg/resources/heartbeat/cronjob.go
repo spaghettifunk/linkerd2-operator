@@ -14,7 +14,6 @@ import (
 
 func (r *Reconciler) cronjob() runtime.Object {
 	labels := util.MergeStringMaps(r.labels(), r.deploymentLabels())
-	heartbeatConfig := r.Config.Spec.Heartbeat
 	return &batchv1.CronJob{
 		ObjectMeta: templates.ObjectMetaWithAnnotations(
 			cronjobName,
@@ -23,7 +22,7 @@ func (r *Reconciler) cronjob() runtime.Object {
 			r.Config,
 		),
 		Spec: batchv1.CronJobSpec{
-			Schedule:                   "",
+			Schedule:                   "16 8 * * * ",
 			SuccessfulJobsHistoryLimit: util.IntPointer(0),
 			JobTemplate: batchv1.JobTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -38,7 +37,7 @@ func (r *Reconciler) cronjob() runtime.Object {
 							Containers: []core.Container{
 								{
 									Name:            componentName,
-									Image:           *r.Config.Spec.Heartbeat.Image,
+									Image:           *r.Config.Spec.Controller.Image,
 									ImagePullPolicy: core.PullIfNotPresent,
 									Args: []string{
 										"heartbeat",
@@ -49,7 +48,7 @@ func (r *Reconciler) cronjob() runtime.Object {
 									SecurityContext: &core.SecurityContext{
 										RunAsUser: util.Int64Pointer(2103),
 									},
-									Resources: heartbeatConfig.Resources,
+									Resources: core.ResourceRequirements{},
 								},
 							},
 						},

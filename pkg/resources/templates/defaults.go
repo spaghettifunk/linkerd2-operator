@@ -141,7 +141,7 @@ func DefaultProxyContainer() apiv1.Container {
 			},
 			Requests: apiv1.ResourceList{
 				apiv1.ResourceCPU:    resource.MustParse("100m"),
-				apiv1.ResourceMemory: resource.MustParse("20Mi"),
+				apiv1.ResourceMemory: resource.MustParse("50Mi"),
 			},
 		},
 		VolumeMounts: []apiv1.VolumeMount{
@@ -150,24 +150,24 @@ func DefaultProxyContainer() apiv1.Container {
 				MountPath: "/var/run/linkerd/identity/end-entity",
 			},
 		},
-		LivenessProbe: &apiv1.Probe{
-			Handler: apiv1.Handler{
-				HTTPGet: &apiv1.HTTPGetAction{
-					Path: "/live",
-					Port: intstr.FromString("4191"),
-				},
-			},
-			InitialDelaySeconds: int32(10),
-		},
-		ReadinessProbe: &apiv1.Probe{
-			Handler: apiv1.Handler{
-				HTTPGet: &apiv1.HTTPGetAction{
-					Path: "/ready",
-					Port: intstr.FromString("4191"),
-				},
-			},
-			InitialDelaySeconds: int32(2),
-		},
+		// LivenessProbe: &apiv1.Probe{
+		// 	Handler: apiv1.Handler{
+		// 		HTTPGet: &apiv1.HTTPGetAction{
+		// 			Path: "/live",
+		// 			Port: intstr.FromString("4191"),
+		// 		},
+		// 	},
+		// 	InitialDelaySeconds: int32(10),
+		// },
+		// ReadinessProbe: &apiv1.Probe{
+		// 	Handler: apiv1.Handler{
+		// 		HTTPGet: &apiv1.HTTPGetAction{
+		// 			Path: "/ready",
+		// 			Port: intstr.FromString("4191"),
+		// 		},
+		// 	},
+		// 	InitialDelaySeconds: int32(2),
+		// },
 		SecurityContext: &apiv1.SecurityContext{
 			RunAsUser:              util.Int64Pointer(2102),
 			ReadOnlyRootFilesystem: util.BoolPointer(true),

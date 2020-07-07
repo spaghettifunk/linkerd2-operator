@@ -1,7 +1,7 @@
 package identity
 
 import (
-	linkerdv1alpha1 "github.com/spaghettifunk/linkerd2-operator/pkg/apis/linkerd/v1alpha1"
+	linkerdv1alpha1 "github.com/spaghettifunk/linkerd2-operator/api/v1alpha1"
 
 	"github.com/go-logr/logr"
 	"github.com/goph/emperror"

@@ -1,0 +1,8 @@
+apiVersion: linkerd.linkerd.io/v1alpha1
+kind: Linkerd
+metadata:
+  name: linkerd-sample
+  namespace: linkerd
+spec:
+  # Add fields here
+  version: "2.8.1"

@@ -4,7 +4,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/goph/emperror"
 
-	linkerdv1alpha1 "github.com/spaghettifunk/linkerd2-operator/pkg/apis/linkerd/v1alpha1"
+	linkerdv1alpha1 "github.com/spaghettifunk/linkerd2-operator/api/v1alpha1"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/k8sutil"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources"
 	"sigs.k8s.io/controller-runtime/pkg/client"

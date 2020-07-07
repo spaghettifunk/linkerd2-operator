@@ -99,9 +99,9 @@ func (r *Reconciler) container() []apiv1.Container {
 			Image:           *webConfig.Image,
 			ImagePullPolicy: r.Config.Spec.ImagePullPolicy,
 			Args:            args,
-			LivenessProbe:   templates.DefaultLivenessProbe("/ping", "9994", 10, 1),
-			ReadinessProbe:  templates.DefaultReadinessProbe("/ready", "9994", 7, 1),
-			Resources:       *webConfig.Resources,
+			// LivenessProbe:   templates.DefaultLivenessProbe("/ping", "9994", 10, 1),
+			// ReadinessProbe:  templates.DefaultReadinessProbe("/ready", "9994", 7, 1),
+			Resources: *webConfig.Resources,
 			Ports: []apiv1.ContainerPort{
 				templates.DefaultContainerPort("http", 8084),
 				templates.DefaultContainerPort("admin-http", 9994),

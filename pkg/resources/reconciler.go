@@ -5,7 +5,7 @@ import (
 	"github.com/spaghettifunk/linkerd2-operator/pkg/k8sutil"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	linkerdv1alpha1 "github.com/spaghettifunk/linkerd2-operator/pkg/apis/linkerd/v1alpha1"
+	linkerdv1alpha1 "github.com/spaghettifunk/linkerd2-operator/api/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 

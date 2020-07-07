@@ -125,9 +125,9 @@ func (r *Reconciler) containers() []apiv1.Container {
 				"proxy-injector",
 				"-log-level=info",
 			},
-			LivenessProbe:  templates.DefaultLivenessProbe("/ping", "9995", 10, 30),
-			ReadinessProbe: templates.DefaultReadinessProbe("/ready", "9995", 7, 30),
-			Resources:      *proxyInjectorConfig.Resources,
+			// LivenessProbe:  templates.DefaultLivenessProbe("/ping", "9995", 10, 30),
+			// ReadinessProbe: templates.DefaultReadinessProbe("/ready", "9995", 7, 30),
+			Resources: *proxyInjectorConfig.Resources,
 			Ports: []apiv1.ContainerPort{
 				templates.DefaultContainerPort("proxy-injector", 8443),
 				templates.DefaultContainerPort("admin-http", 9995),

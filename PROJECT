@@ -1,0 +1,10 @@
+domain: linkerd.io
+layout: go.kubebuilder.io/v2.0.0
+repo: github.com/spaghettifunk/linkerd2-operator
+resources:
+- group: linkerd
+  kind: Linkerd
+  version: v1alpha1
+version: 3-alpha
+plugins:
+  go.operator-sdk.io/v2.0.0: {}

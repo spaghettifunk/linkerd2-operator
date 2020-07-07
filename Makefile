@@ -1,90 +1,95 @@
-.DEFAULT_GOAL:=help
-VERSION=latest
-SHELL:=/bin/bash
-NAMESPACE=linkerd
 
-##@ Application
+# Image URL to use all building/pushing image targets
+IMG ?= controller:latest
+# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
+CRD_OPTIONS ?= "crd:trivialVersions=true"
 
-install: ## Install all resources (CR/CRD's, RBAC and Operator)
-	@echo ....... Creating namespace ....... 
-	- kubectl create namespace ${NAMESPACE}
-	@echo ....... Applying CRDs .......
-	- kubectl apply -f deploy/crds/linkerd.io_linkerds_crd.yaml -n ${NAMESPACE}
-	@echo ....... Applying Rules and Service Account .......
-	- kubectl apply -f deploy/role.yaml -n ${NAMESPACE}
-	- kubectl apply -f deploy/role_binding.yaml  -n ${NAMESPACE}
-	- kubectl apply -f deploy/service_account.yaml  -n ${NAMESPACE}
-	@echo ....... Applying Operator .......
-	- kubectl apply -f deploy/operator.yaml -n ${NAMESPACE}
-	@echo ....... Creating the CRs .......
-	- kubectl apply -f deploy/crds/linkerd.io_v1alpha1_linkerd_cr.yaml -n ${NAMESPACE}
+# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
+ifeq (,$(shell go env GOBIN))
+GOBIN=$(shell go env GOPATH)/bin
+else
+GOBIN=$(shell go env GOBIN)
+endif
 
-uninstall: ## Uninstall all that all performed in the $ make install
-	@echo ....... Uninstalling .......
-	@echo ....... Deleting CRDs.......
-	- kubectl delete -f deploy/crds/linkerd.io_linkerds_crd.yaml -n ${NAMESPACE}
-	@echo ....... Deleting Rules and Service Account .......
-	- kubectl delete -f deploy/role.yaml -n ${NAMESPACE}
-	- kubectl delete -f deploy/role_binding.yaml -n ${NAMESPACE}
-	- kubectl delete -f deploy/service_account.yaml -n ${NAMESPACE}
-	@echo ....... Deleting Operator .......
-	- kubectl delete -f deploy/operator.yaml -n ${NAMESPACE}
-	@echo ....... Deleting namespace ${NAMESPACE}.......
-	- kubectl delete namespace ${NAMESPACE}
+all: manager
 
-##@ Development
+# Run tests
+test: generate fmt vet manifests
+	go test ./... -coverprofile cover.out
 
-vet: ## Run go vet for this project. More info: https://golang.org/cmd/vet/
-	@echo go vet
-	go vet $$(go list ./... )
+# Build manager binary
+manager: generate fmt vet
+	go build -o bin/manager main.go
 
-fmt: ## Run go fmt for this project
-	@echo go fmt
-	go fmt $$(go list ./... )
+# Run against the configured Kubernetes cluster in ~/.kube/config
+run: generate fmt vet manifests
+	go run ./main.go
 
-dev: ## Run the default dev commands which are the go fmt and vet then execute the $ make code-gen
-	@echo Running the common required commands for developments purposes
-	- make fmt
-	- make vet
-	- make codegen
+# Install CRDs into a cluster
+install: manifests kustomize
+	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
-codegen: ## Run the operator-sdk commands to generated code (k8s and openapi)
-	@echo Updating the deep copy files with the changes in the API
-	operator-sdk generate k8s
-	@echo Updating the CRD files with the OpenAPI validations
-	operator-sdk generate crds
+# Uninstall CRDs from a cluster
+uninstall: manifests kustomize
+	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
-##@ Tests
+# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+deploy: manifests kustomize
+	cd config/manager && kustomize edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
-test-e2e: ## Run integration e2e tests with different options.
-	@echo ... Running the same e2e tests with different args ...
-	@echo ... Running locally ...
-	- kubectl create namespace ${NAMESPACE} || true
-	- operator-sdk test local ./test/e2e --up-local --namespace=${NAMESPACE}
-	@echo ... Running NOT in parallel ...
-	- operator-sdk test local ./test/e2e --go-test-flags "-v -parallel=1"
-	@echo ... Running in parallel ...
-	- operator-sdk test local ./test/e2e --go-test-flags "-v -parallel=2"
-	@echo ... Running without options/args ...
-	- operator-sdk test local ./test/e2e
-	@echo ... Running with the --debug param ...
-	- operator-sdk test local ./test/e2e --debug
-	@echo ... Running with the --verbose param ...
-	- operator-sdk test local ./test/e2e --verbose
+# Generate manifests e.g. CRD, RBAC etc.
+manifests: controller-gen
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
-.PHONY: release
-release:
-	git tag "v$(VERSION)"
-	git push origin "v$(VERSION)"
+# Run go fmt against code
+fmt:
+	go fmt ./...
 
-.PHONY: release-note
-release-notes:
-	cd /tmp && GH_REL_URL="https://github.com/buchanae/github-release-notes/releases/download/0.2.0/github-release-notes-linux-amd64-0.2.0.tar.gz" && \
-    curl -sSL $${GH_REL_URL} | tar xz && sudo mv github-release-notes /usr/local/bin/
+# Run go vet against code
+vet:
+	go vet ./...
 
-.PHONY: help
-help: ## Display this help
-	@echo -e "Usage:\n  make \033[36m<target>\033[0m"
-	@awk 'BEGIN {FS = ":.*##"}; \
-		/^[a-zA-Z0-9_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } \
-		/^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+# Generate code
+generate: controller-gen
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+
+# Build the docker image
+docker-build: test
+	docker build . -t ${IMG}
+
+# Push the docker image
+docker-push:
+	docker push ${IMG}
+
+# find or download controller-gen
+# download controller-gen if necessary
+controller-gen:
+ifeq (, $(shell which controller-gen))
+	@{ \
+	set -e ;\
+	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
+	cd $$CONTROLLER_GEN_TMP_DIR ;\
+	go mod init tmp ;\
+	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.3.0 ;\
+	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
+	}
+CONTROLLER_GEN=$(GOBIN)/controller-gen
+else
+CONTROLLER_GEN=$(shell which controller-gen)
+endif
+
+kustomize:
+ifeq (, $(shell which kustomize))
+	@{ \
+	set -e ;\
+	KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
+	cd $$KUSTOMIZE_GEN_TMP_DIR ;\
+	go mod init tmp ;\
+	go get sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
+	rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
+	}
+KUSTOMIZE=$(GOBIN)/kustomize
+else
+KUSTOMIZE=$(shell which kustomize)
+endif

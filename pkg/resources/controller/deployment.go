@@ -75,14 +75,15 @@ func (r *Reconciler) containers() []apiv1.Container {
 
 	controllerConfig := r.Config.Spec.Controller
 	containers := []apiv1.Container{
+		templates.DefaultProxyContainer(),
 		{
 			Name:            "public-api",
 			Image:           *controllerConfig.Image,
 			ImagePullPolicy: r.Config.Spec.ImagePullPolicy,
 			Args:            args,
-			LivenessProbe:   templates.DefaultLivenessProbe("/ping", "9995", 10, 30),
-			ReadinessProbe:  templates.DefaultReadinessProbe("/ready", "9995", 7, 30),
-			Resources:       *controllerConfig.Resources,
+			// LivenessProbe:   templates.DefaultLivenessProbe("/ping", "9995", 10, 30),
+			// ReadinessProbe:  templates.DefaultReadinessProbe("/ready", "9995", 7, 30),
+			Resources: *controllerConfig.Resources,
 			Ports: []apiv1.ContainerPort{
 				templates.DefaultContainerPort("http", 8085),
 				templates.DefaultContainerPort("admin-http", 9995),

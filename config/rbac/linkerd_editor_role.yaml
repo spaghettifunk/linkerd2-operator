@@ -1,0 +1,24 @@
+# permissions for end users to edit linkerds.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: linkerd-editor-role
+rules:
+- apiGroups:
+  - linkerd.linkerd.io
+  resources:
+  - linkerds
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - linkerd.linkerd.io
+  resources:
+  - linkerds/status
+  verbs:
+  - get
