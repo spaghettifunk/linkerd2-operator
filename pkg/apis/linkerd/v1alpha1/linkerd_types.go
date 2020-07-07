@@ -113,37 +113,27 @@ type LinkerdSpec struct {
 	LogLevel string `json:"logLevel"`
 	// SelfSignedCertificates determines if the user is going to supply the certificates or if the operator needs to generate new ones
 	SelfSignedCertificates bool `json:"slefSignedCerts"`
-
 	// List of namespaces to label with sidecar auto injection enabled
 	AutoInjectionNamespaces []string `json:"autoInjectionNamespaces,omitempty"`
 	// ImagePullPolicy describes a policy for if/when to pull a container image
 	// +kubebuilder:validation:Enum=Always;Never;IfNotPresent
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
-
 	// Controller configuration options
 	Controller ControllerConfiguration `json:"controller,omitempty"`
-
 	// Destination configuration options
 	Destination DestinationConfiguration `json:"destination,omitempty"`
-
 	// Heartbeat configuration options
 	Heartbeat HeartbeatConfiguration `json:"heartbeat,omitempty"`
-
 	// Identity configuration options
 	Identity IdentityConfiguration `json:"identity,omitempty"`
-
 	// Prometheus configuration options
 	Prometheus PrometheusConfiguration `json:"prometheus,omitempty"`
-
 	// ProxyInit configuration options
 	ProxyInit ProxyInitConfiguration `json:"proxyInit,omitempty"`
-
 	// ProxyInjector configuration options
 	ProxyInjector ProxyInjectorConfiguration `json:"proxyInjector,omitempty"`
-
 	// Tap configuration options
 	Tap TapConfiguration `json:"tap,omitempty"`
-
 	// Web configuration options
 	Web WebConfiguration `json:"web,omitempty"`
 }
@@ -157,7 +147,6 @@ type LinkerdStatus struct {
 // IsSupported checks if the version of Linkerd is complied with the supported one by the operator
 func (v LinkerdVersion) IsSupported() bool {
 	re, _ := regexp.Compile(supportedLinkerdMinorVersionRegex)
-
 	return re.Match([]byte(v))
 }
 
