@@ -16,6 +16,7 @@ const (
 	clusterRoleName        = "linkerd-controller"
 	clusterRoleBindingName = "linkerd-controller"
 	deploymentName         = "linkerd-controller"
+	configmapName          = "linkerd-config"
 	serviceName            = "linkerd-controller-api"
 )
 
@@ -46,6 +47,7 @@ func (r *Reconciler) Reconcile(log logr.Logger) error {
 		{Resource: r.serviceAccount, DesiredState: desiredState},
 		{Resource: r.clusterRole, DesiredState: desiredState},
 		{Resource: r.clusterRoleBinding, DesiredState: desiredState},
+		{Resource: r.configmap, DesiredState: desiredState},
 		{Resource: r.deployment, DesiredState: desiredState},
 		{Resource: r.service, DesiredState: desiredState},
 	} {
