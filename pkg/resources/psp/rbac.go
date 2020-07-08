@@ -9,7 +9,7 @@ import (
 
 func (r *Reconciler) roleBinding() runtime.Object {
 	return &rbacv1.RoleBinding{
-		ObjectMeta: templates.ObjectMetaClusterScope(roleBindingName, r.labels(), r.Config),
+		ObjectMeta: templates.ObjectMeta(roleBindingName, r.labels(), r.Config),
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
@@ -80,7 +80,7 @@ func (r *Reconciler) roleBinding() runtime.Object {
 
 func (r *Reconciler) role() runtime.Object {
 	return &rbacv1.Role{
-		ObjectMeta: templates.ObjectMetaClusterScope(roleName, r.labels(), r.Config),
+		ObjectMeta: templates.ObjectMeta(roleName, r.labels(), r.Config),
 		Rules: []rbacv1.PolicyRule{
 			{
 				APIGroups:     []string{"policy", "extensions"},

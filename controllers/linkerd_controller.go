@@ -26,11 +26,13 @@ import (
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources"
 	linkerdcontroller "github.com/spaghettifunk/linkerd2-operator/pkg/resources/controller"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/destination"
+	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/heartbeat"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/identity"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/prometheus"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/proxyinjector"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/psp"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/tap"
+	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/web"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
@@ -160,13 +162,13 @@ func (r *ReconcileLinkerd) reconcile(logger logr.Logger, config *linkerdv1alpha1
 	reconcilers := []resources.ComponentReconciler{
 		linkerdcontroller.New(r.Client, config),
 		destination.New(r.Client, config),
-		// heartbeat.New(r.Client, config),
+		heartbeat.New(r.Client, config),
 		identity.New(r.Client, config),
 		prometheus.New(r.Client, config),
 		proxyinjector.New(r.Client, config),
 		// serviceprofile.New(r.Client, config),
 		// trafficsplit.New(r.Client, config),
-		// web.New(r.Client, config),
+		web.New(r.Client, config),
 		tap.New(r.Client, config),
 		psp.New(r.Client, config),
 	}

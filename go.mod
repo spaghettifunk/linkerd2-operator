@@ -4,11 +4,8 @@ go 1.13
 
 require (
 	github.com/banzaicloud/k8s-objectmatcher v1.4.0
-	github.com/davecgh/go-spew v1.1.1
-	github.com/docker/docker v1.13.1
 	github.com/go-logr/logr v0.1.0
 	github.com/goph/emperror v0.17.2
-	github.com/linkerd/linkerd2 v18.9.1+incompatible // indirect
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.8.1
 	github.com/pkg/errors v0.8.1
