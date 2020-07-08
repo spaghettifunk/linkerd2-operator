@@ -5,6 +5,7 @@ import (
 
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/templates"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/util"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -36,16 +37,16 @@ func (r *Reconciler) deployment() runtime.Object {
 					NodeSelector: map[string]string{
 						"beta.kubernetes.io/os": "linux",
 					},
-					Tolerations: []apiv1.Toleration{
-						{
-							Operator: apiv1.TolerationOpExists,
-							Effect:   apiv1.TaintEffectNoSchedule,
-						},
-						{
-							Operator: apiv1.TolerationOpExists,
-							Effect:   apiv1.TaintEffectNoExecute,
-						},
-					},
+					// Tolerations: []apiv1.Toleration{
+					// 	{
+					// 		Operator: apiv1.TolerationOpExists,
+					// 		Effect:   apiv1.TaintEffectNoSchedule,
+					// 	},
+					// 	{
+					// 		Operator: apiv1.TolerationOpExists,
+					// 		Effect:   apiv1.TaintEffectNoExecute,
+					// 	},
+					// },
 					TerminationGracePeriodSeconds: util.Int64Pointer(5),
 					ServiceAccountName:            serviceAccountName,
 					Containers:                    r.container(),
@@ -78,19 +79,13 @@ func (r *Reconciler) deployment() runtime.Object {
 }
 
 func (r *Reconciler) container() []apiv1.Container {
+	obj := r.Config.DeepCopyObject()
+	objMeta, _ := meta.Accessor(obj)
 
-	apiAddr := fmt.Sprintf("-api-addr=linkerd-controller-api.%s.svc.cluster.local:8085", r.Config.Namespace)
-	grafanaAddr := fmt.Sprintf("-grafana-addr=linkerd-grafana.%s.svc.cluster.local:3000", r.Config.Namespace)
-	controllerNamespace := fmt.Sprintf("-controller-namespace=%s", r.Config.Namespace)
-	enforcedHost := fmt.Sprintf("-enforced-host=^(localhost|127\\.0\\.0\\.1|linkerd-web\\.%s\\.svc\\.cluster\\.local|linkerd-web\\.%s\\.svc|\\[::1\\])(:\\d+)?$", r.Config.Namespace, r.Config.Namespace)
-
-	args := []string{
-		apiAddr,
-		grafanaAddr,
-		controllerNamespace,
-		enforcedHost,
-		"-log-level=info",
-	}
+	apiAddr := fmt.Sprintf("-api-addr=linkerd-controller-api.%s.svc.cluster.local:8085", objMeta.GetNamespace())
+	grafanaAddr := fmt.Sprintf("-grafana-addr=linkerd-grafana.%s.svc.cluster.local:3000", objMeta.GetNamespace())
+	controllerNamespace := fmt.Sprintf("-controller-namespace=%s", objMeta.GetNamespace())
+	enforcedHost := fmt.Sprintf("-enforced-host=^(localhost|127\\.0\\.0\\.1|linkerd-web\\.%s\\.svc\\.cluster\\.local|linkerd-web\\.%s\\.svc|\\[::1\\])(:\\d+)?$", objMeta.GetNamespace(), objMeta.GetNamespace())
 
 	webConfig := r.Config.Spec.Web
 	containers := []apiv1.Container{
@@ -98,7 +93,7 @@ func (r *Reconciler) container() []apiv1.Container {
 			Name:            "web",
 			Image:           *webConfig.Image,
 			ImagePullPolicy: r.Config.Spec.ImagePullPolicy,
-			Args:            args,
+			Args:            []string{apiAddr, grafanaAddr, controllerNamespace, enforcedHost, "-log-level=info"},
 			// LivenessProbe:   templates.DefaultLivenessProbe("/ping", "9994", 10, 1),
 			// ReadinessProbe:  templates.DefaultReadinessProbe("/ready", "9994", 7, 1),
 			Resources: *webConfig.Resources,

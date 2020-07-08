@@ -43,12 +43,33 @@ func (r *Reconciler) deployment() runtime.Object {
 					InitContainers:     templates.ProxyInitContainer(),
 					Volumes: []apiv1.Volume{
 						{
+							Name: "data",
+						},
+						{
 							Name: "config",
 							VolumeSource: apiv1.VolumeSource{
 								ConfigMap: &apiv1.ConfigMapVolumeSource{
 									LocalObjectReference: apiv1.LocalObjectReference{
 										Name: "linkerd-config",
 									},
+								},
+							},
+						},
+						{
+							Name: "prometheus-config",
+							VolumeSource: apiv1.VolumeSource{
+								ConfigMap: &apiv1.ConfigMapVolumeSource{
+									LocalObjectReference: apiv1.LocalObjectReference{
+										Name: configmapName,
+									},
+								},
+							},
+						},
+						{
+							Name: "linkerd-identity-end-entity",
+							VolumeSource: apiv1.VolumeSource{
+								EmptyDir: &apiv1.EmptyDirVolumeSource{
+									Medium: apiv1.StorageMediumMemory,
 								},
 							},
 						},
@@ -62,7 +83,7 @@ func (r *Reconciler) deployment() runtime.Object {
 func (r *Reconciler) containers() []apiv1.Container {
 	prometheusConfig := r.Config.Spec.Prometheus
 	containers := []apiv1.Container{
-		templates.DefaultProxyContainer(),
+		templates.DefaultProxyContainer(r.Config.Spec),
 		{
 			Name:            "prometheus",
 			Image:           *prometheusConfig.Image,

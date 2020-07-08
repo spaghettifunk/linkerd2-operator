@@ -53,9 +53,11 @@ func init() {
 }
 
 func main() {
+	var logDebug bool
 	var metricsAddr string
 	var enableLeaderElection bool
 	var waitBeforeExitDuration time.Duration
+	flag.BoolVar(&logDebug, "debug", false, "Enable log level debug mode.")
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
@@ -63,7 +65,7 @@ func main() {
 	flag.DurationVar(&waitBeforeExitDuration, "wait-before-exit-duration", time.Duration(3)*time.Second, "Wait for workers to finish before exiting and removing finalizers")
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
+	ctrl.SetLogger(zap.New(zap.UseDevMode(logDebug)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,

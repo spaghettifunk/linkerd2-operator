@@ -16,6 +16,7 @@ const (
 	clusterRoleName        = "linkerd-prometheus"
 	clusterRoleBindingName = "linkerd-prometheus"
 	deploymentName         = "linkerd-prometheus"
+	configmapName          = "linkerd-prometheus-config"
 	serviceName            = "linkerd-prometheus"
 )
 

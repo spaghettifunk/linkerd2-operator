@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"github.com/spaghettifunk/linkerd2-operator/pkg/certs"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/util"
 	"k8s.io/apimachinery/pkg/api/resource"
 
@@ -52,6 +53,21 @@ var defaultResources = &apiv1.ResourceRequirements{
 
 // SetDefaults sets the defaults values for all the components
 func SetDefaults(config *Linkerd) {
+	// certs
+	if config.Spec.SelfSignedCertificates == nil {
+		// create certs here and dispatch them in the configs
+		it, err := certs.GenerateTrustAnchorsCertificates("")
+		// TODO: fix this
+		if err != nil {
+			panic(err)
+		}
+		// set certs with newly generated ones
+		config.Spec.SelfSignedCertificates = &SelfSignedCertificates{
+			TrustAnchorsPEM: it.TrustAnchorsPEM,
+			KeyPEM:          it.KeyPEM,
+			CrtPEM:          it.CrtPEM,
+		}
+	}
 	// controller
 	if config.Spec.Controller.Image == nil {
 		config.Spec.Controller.Image = util.StrPointer(defaultControllerImage)
@@ -80,7 +96,6 @@ func SetDefaults(config *Linkerd) {
 	if config.Spec.Prometheus.Image == nil {
 		config.Spec.Prometheus.Image = util.StrPointer(defaultPrometheusImage)
 	}
-
 	if config.Spec.Prometheus.Resources == nil {
 		config.Spec.Prometheus.Resources = &apiv1.ResourceRequirements{
 			Limits: apiv1.ResourceList{

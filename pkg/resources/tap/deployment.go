@@ -1,6 +1,8 @@
 package tap
 
 import (
+	"k8s.io/apimachinery/pkg/api/meta"
+
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/templates"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/util"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -59,7 +61,14 @@ func (r *Reconciler) deployment() runtime.Object {
 								},
 							},
 						},
-						// TODO: add Identity volume here
+						{
+							Name: "linkerd-identity-end-entity",
+							VolumeSource: apiv1.VolumeSource{
+								EmptyDir: &apiv1.EmptyDirVolumeSource{
+									Medium: apiv1.StorageMediumMemory,
+								},
+							},
+						},
 					},
 				},
 			},
@@ -68,10 +77,12 @@ func (r *Reconciler) deployment() runtime.Object {
 }
 
 func (r *Reconciler) containers() []apiv1.Container {
+	obj := r.Config.DeepCopyObject()
+	objMeta, _ := meta.Accessor(obj)
 
 	args := []string{
 		"tap",
-		"-controller-namespace=" + r.Config.Namespace,
+		"-controller-namespace=" + objMeta.GetNamespace(),
 		"-log-level=info",
 	}
 

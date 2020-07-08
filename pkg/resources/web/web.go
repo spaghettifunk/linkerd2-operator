@@ -19,7 +19,6 @@ const (
 	clusterRoleBindingNameWebCheck = "linkerd-web-check"
 	clusterRoleBindingNameWebAdmin = "linkerd-web-admin"
 	deploymentName                 = "linkerd-web"
-	configMapName                  = "linkerd-web-config"
 	serviceName                    = "linkerd-web"
 )
 
@@ -52,7 +51,6 @@ func (r *Reconciler) Reconcile(log logr.Logger) error {
 		{Resource: r.clusterRole, DesiredState: desiredState},
 		{Resource: r.clusterRoleBindingWebCheck, DesiredState: desiredState},
 		{Resource: r.clusterRoleBindingWebAdmin, DesiredState: desiredState},
-		{Resource: r.configMap, DesiredState: desiredState},
 		{Resource: r.deployment, DesiredState: desiredState},
 		{Resource: r.service, DesiredState: desiredState},
 	} {

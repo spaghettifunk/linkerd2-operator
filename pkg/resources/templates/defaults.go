@@ -6,6 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/spaghettifunk/linkerd2-operator/api/v1alpha1"
 	"github.com/spaghettifunk/linkerd2-operator/pkg/util"
 )
 
@@ -129,7 +130,7 @@ func ProxyInitContainer() []apiv1.Container {
 }
 
 // DefaultProxyContainer returns the Proxy container definition
-func DefaultProxyContainer() apiv1.Container {
+func DefaultProxyContainer(config v1alpha1.LinkerdSpec) apiv1.Container {
 	return apiv1.Container{
 		Name:            "linkerd-proxy",
 		Image:           "gcr.io/linkerd-io/proxy:stable-2.8.1",
@@ -234,9 +235,8 @@ func DefaultProxyContainer() apiv1.Container {
 				Value: "/var/run/linkerd/identity/end-entity",
 			},
 			{
-				// TODO: pass the correct .cert file
 				Name:  "LINKERD2_PROXY_IDENTITY_TRUST_ANCHORS",
-				Value: "",
+				Value: config.SelfSignedCertificates.TrustAnchorsPEM,
 			},
 			{
 				Name:  "LINKERD2_PROXY_IDENTITY_TOKEN_FILE",

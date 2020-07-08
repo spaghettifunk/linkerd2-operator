@@ -72,41 +72,41 @@ func (r *Reconciler) deployment() runtime.Object {
 					NodeSelector: map[string]string{
 						"beta.kubernetes.io/os": "linux",
 					},
-					Affinity: &apiv1.Affinity{
-						PodAntiAffinity: &apiv1.PodAntiAffinity{
-							RequiredDuringSchedulingIgnoredDuringExecution: []apiv1.PodAffinityTerm{
-								{
-									LabelSelector: &metav1.LabelSelector{
-										MatchExpressions: []metav1.LabelSelectorRequirement{
-											{
-												Key:      "linkerd.io/control-plane-component",
-												Operator: "In",
-												Values:   []string{"proxy-injector"},
-											},
-										},
-									},
-									TopologyKey: "kubernetes.io/hostname",
-								},
-							},
-							PreferredDuringSchedulingIgnoredDuringExecution: []apiv1.WeightedPodAffinityTerm{
-								{
-									Weight: 100,
-									PodAffinityTerm: apiv1.PodAffinityTerm{
-										LabelSelector: &metav1.LabelSelector{
-											MatchExpressions: []metav1.LabelSelectorRequirement{
-												{
-													Key:      "linkerd.io/control-plane-component",
-													Operator: "In",
-													Values:   []string{"proxy-injector"},
-												},
-											},
-										},
-										TopologyKey: "failure-domain.beta.kubernetes.io/zone",
-									},
-								},
-							},
-						},
-					},
+					// Affinity: &apiv1.Affinity{
+					// 	PodAntiAffinity: &apiv1.PodAntiAffinity{
+					// 		RequiredDuringSchedulingIgnoredDuringExecution: []apiv1.PodAffinityTerm{
+					// 			{
+					// 				LabelSelector: &metav1.LabelSelector{
+					// 					MatchExpressions: []metav1.LabelSelectorRequirement{
+					// 						{
+					// 							Key:      "linkerd.io/control-plane-component",
+					// 							Operator: "In",
+					// 							Values:   []string{"proxy-injector"},
+					// 						},
+					// 					},
+					// 				},
+					// 				TopologyKey: "kubernetes.io/hostname",
+					// 			},
+					// 		},
+					// 		PreferredDuringSchedulingIgnoredDuringExecution: []apiv1.WeightedPodAffinityTerm{
+					// 			{
+					// 				Weight: 100,
+					// 				PodAffinityTerm: apiv1.PodAffinityTerm{
+					// 					LabelSelector: &metav1.LabelSelector{
+					// 						MatchExpressions: []metav1.LabelSelectorRequirement{
+					// 							{
+					// 								Key:      "linkerd.io/control-plane-component",
+					// 								Operator: "In",
+					// 								Values:   []string{"proxy-injector"},
+					// 							},
+					// 						},
+					// 					},
+					// 					TopologyKey: "failure-domain.beta.kubernetes.io/zone",
+					// 				},
+					// 			},
+					// 		},
+					// 	},
+					// },
 				},
 			},
 		},
@@ -116,7 +116,7 @@ func (r *Reconciler) deployment() runtime.Object {
 func (r *Reconciler) containers() []apiv1.Container {
 	proxyInjectorConfig := r.Config.Spec.ProxyInjector
 	containers := []apiv1.Container{
-		templates.DefaultProxyContainer(),
+		templates.DefaultProxyContainer(r.Config.Spec),
 		{
 			Name:            "proxy-injector",
 			Image:           *proxyInjectorConfig.Image,

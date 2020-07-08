@@ -54,7 +54,14 @@ func (r *Reconciler) deployment() runtime.Object {
 								},
 							},
 						},
-						// TODO: add Identity volume here
+						{
+							Name: "linkerd-identity-end-entity",
+							VolumeSource: apiv1.VolumeSource{
+								EmptyDir: &apiv1.EmptyDirVolumeSource{
+									Medium: apiv1.StorageMediumMemory,
+								},
+							},
+						},
 						// TODO: add Tracing labels here
 					},
 				},
@@ -75,7 +82,7 @@ func (r *Reconciler) containers() []apiv1.Container {
 
 	controllerConfig := r.Config.Spec.Controller
 	containers := []apiv1.Container{
-		templates.DefaultProxyContainer(),
+		templates.DefaultProxyContainer(r.Config.Spec),
 		{
 			Name:            "public-api",
 			Image:           *controllerConfig.Image,

@@ -4075,11 +4075,18 @@ spec:
                     type: object
                   type: array
               type: object
-            slefSignedCerts:
+            selfSignedCerts:
               description: SelfSignedCertificates determines if the user is going
                 to supply the certificates or if the operator needs to generate new
                 ones
-              type: boolean
+              properties:
+                crtPEM:
+                  type: string
+                keyPEM:
+                  type: string
+                trustAnchorsPEM:
+                  type: string
+              type: object
             tap:
               description: Tap configuration options
               properties:

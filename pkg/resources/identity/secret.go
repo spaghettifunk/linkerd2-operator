@@ -1,4 +1,4 @@
-package tap
+package identity
 
 import (
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/templates"

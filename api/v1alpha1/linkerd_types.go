@@ -102,6 +102,14 @@ type WebConfiguration struct {
 	BaseK8sResourceConfiguration `json:",inline"`
 }
 
+// SelfSignedCertificates defines the certificates used in the operator.
+// If Issue is true, the operator will self generate the certificates
+type SelfSignedCertificates struct {
+	TrustAnchorsPEM string `json:"trustAnchorsPEM,omitempty"`
+	KeyPEM          string `json:"keyPEM,omitempty"`
+	CrtPEM          string `json:"crtPEM,omitempty"`
+}
+
 // LinkerdVersion stores the intended Linkerd version
 type LinkerdVersion string
 
@@ -112,7 +120,7 @@ type LinkerdSpec struct {
 	// LogLevel is the log level for the linkerd controller
 	LogLevel string `json:"logLevel,omitempty"`
 	// SelfSignedCertificates determines if the user is going to supply the certificates or if the operator needs to generate new ones
-	SelfSignedCertificates bool `json:"slefSignedCerts,omitempty"`
+	SelfSignedCertificates *SelfSignedCertificates `json:"selfSignedCerts,omitempty"`
 	// List of namespaces to label with sidecar auto injection enabled
 	AutoInjectionNamespaces []string `json:"autoInjectionNamespaces,omitempty"`
 	// ImagePullPolicy describes a policy for if/when to pull a container image
