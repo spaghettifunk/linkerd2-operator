@@ -113,16 +113,7 @@ func SetDefaults(config *Linkerd) {
 		config.Spec.ProxyInjector.Image = util.StrPointer(defaultControllerImage)
 	}
 	if config.Spec.ProxyInjector.Resources == nil {
-		config.Spec.ProxyInjector.Resources = &apiv1.ResourceRequirements{
-			Limits: apiv1.ResourceList{
-				apiv1.ResourceCPU:    resource.MustParse("1"),
-				apiv1.ResourceMemory: resource.MustParse("250Mi"),
-			},
-			Requests: apiv1.ResourceList{
-				apiv1.ResourceCPU:    resource.MustParse("100m"),
-				apiv1.ResourceMemory: resource.MustParse("50Mi"),
-			},
-		}
+		config.Spec.ProxyInjector.Resources = defaultResources
 	}
 	// psp
 

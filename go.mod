@@ -12,11 +12,10 @@ require (
 	github.com/prometheus/common v0.4.1
 	github.com/stretchr/testify v1.4.0
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
-	k8s.io/api v0.18.5
+	k8s.io/api v0.18.2
 	k8s.io/apiextensions-apiserver v0.18.2
-	k8s.io/apimachinery v0.18.5
-	k8s.io/client-go v0.18.5
-	k8s.io/kube-aggregator v0.18.5
-	k8s.io/kubernetes v1.14.2
+	k8s.io/apimachinery v0.18.2
+	k8s.io/client-go v0.18.2
+	k8s.io/kube-aggregator v0.15.12
 	sigs.k8s.io/controller-runtime v0.6.0
 )

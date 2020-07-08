@@ -7,13 +7,14 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 
+	batchv1 "k8s.io/api/batch/v1"
+	v1beta1 "k8s.io/api/batch/v1beta1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	batchv1 "k8s.io/kubernetes/pkg/apis/batch"
-	"k8s.io/kubernetes/pkg/apis/core"
 )
 
 func (r *Reconciler) cronjob() runtime.Object {
-	return &batchv1.CronJob{
+	return &v1beta1.CronJob{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cronjobName,
 			Namespace: r.Config.Namespace,
@@ -28,9 +29,9 @@ func (r *Reconciler) cronjob() runtime.Object {
 				"linkerd.io/created-by": "linkerd/cli stable-2.8.1",
 			},
 		},
-		Spec: batchv1.CronJobSpec{
+		Spec: v1beta1.CronJobSpec{
 			Schedule: "16 8 * * *",
-			JobTemplate: batchv1.JobTemplateSpec{
+			JobTemplate: v1beta1.JobTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
 						"linkerd.io/control-plane-component": "heartbeat",
@@ -41,32 +42,32 @@ func (r *Reconciler) cronjob() runtime.Object {
 					},
 				},
 				Spec: batchv1.JobSpec{
-					Template: core.PodTemplateSpec{
-						Spec: core.PodSpec{
+					Template: v1.PodTemplateSpec{
+						Spec: v1.PodSpec{
 							ServiceAccountName: serviceAccountName,
-							RestartPolicy:      core.RestartPolicyNever,
-							Containers: []core.Container{
+							RestartPolicy:      v1.RestartPolicyNever,
+							Containers: []v1.Container{
 								{
 									Name:            componentName,
 									Image:           *r.Config.Spec.Controller.Image,
-									ImagePullPolicy: core.PullIfNotPresent,
+									ImagePullPolicy: v1.PullIfNotPresent,
 									Args: []string{
 										"heartbeat",
 										fmt.Sprintf("-prometheus-url=http://linkerd-prometheus.%s.svc.%s:9090", r.Config.Namespace, "cluster.local"),
 										"-controller-namespace=" + r.Config.Namespace,
 										"-log-level=info",
 									},
-									SecurityContext: &core.SecurityContext{
+									SecurityContext: &v1.SecurityContext{
 										RunAsUser: util.Int64Pointer(2103),
 									},
-									Resources: core.ResourceRequirements{
-										Limits: core.ResourceList{
-											core.ResourceCPU:    resource.MustParse("1"),
-											core.ResourceMemory: resource.MustParse("250Mi"),
+									Resources: v1.ResourceRequirements{
+										Limits: v1.ResourceList{
+											v1.ResourceCPU:    resource.MustParse("1"),
+											v1.ResourceMemory: resource.MustParse("250Mi"),
 										},
-										Requests: core.ResourceList{
-											core.ResourceCPU:    resource.MustParse("100m"),
-											core.ResourceMemory: resource.MustParse("50Mi"),
+										Requests: v1.ResourceList{
+											v1.ResourceCPU:    resource.MustParse("100m"),
+											v1.ResourceMemory: resource.MustParse("50Mi"),
 										},
 									},
 								},

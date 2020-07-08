@@ -54,7 +54,7 @@ func (r *Reconciler) Reconcile(log logr.Logger) error {
 		{Resource: r.clusterRoleAdmin, DesiredState: desiredState},
 		{Resource: r.clusterRoleBinding, DesiredState: desiredState},
 		{Resource: r.clusterRoleBindingAuthDelegator, DesiredState: desiredState},
-		{Resource: r.apiService, DesiredState: desiredState},
+		// {Resource: r.apiService, DesiredState: desiredState},
 		{Resource: r.secret, DesiredState: desiredState},
 		{Resource: r.deployment, DesiredState: desiredState},
 		{Resource: r.service, DesiredState: desiredState},

@@ -35,7 +35,7 @@ func (r *Reconciler) roleBindingAuthReader() runtime.Object {
 
 func (r *Reconciler) clusterRole() runtime.Object {
 	return &rbacv1.ClusterRole{
-		ObjectMeta: templates.ObjectMeta(clusterRoleName, r.labels(), r.Config),
+		ObjectMeta: templates.ObjectMetaClusterScope(clusterRoleName, r.labels(), r.Config),
 		Rules: []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{""},
@@ -58,7 +58,7 @@ func (r *Reconciler) clusterRole() runtime.Object {
 
 func (r *Reconciler) clusterRoleAdmin() runtime.Object {
 	return &rbacv1.ClusterRole{
-		ObjectMeta: templates.ObjectMeta(clusterRoleNameAdmin, r.labels(), r.Config),
+		ObjectMeta: templates.ObjectMetaClusterScope(clusterRoleNameAdmin, r.labels(), r.Config),
 		Rules: []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{"tap.linkerd.io"},
@@ -71,7 +71,7 @@ func (r *Reconciler) clusterRoleAdmin() runtime.Object {
 
 func (r *Reconciler) clusterRoleBinding() runtime.Object {
 	return &rbacv1.ClusterRoleBinding{
-		ObjectMeta: templates.ObjectMeta(clusterRoleBindingName, r.labels(), r.Config),
+		ObjectMeta: templates.ObjectMetaClusterScope(clusterRoleBindingName, r.labels(), r.Config),
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
@@ -89,7 +89,7 @@ func (r *Reconciler) clusterRoleBinding() runtime.Object {
 
 func (r *Reconciler) clusterRoleBindingAuthDelegator() runtime.Object {
 	return &rbacv1.ClusterRoleBinding{
-		ObjectMeta: templates.ObjectMeta(clusterRoleBindingNameAuthDelegator, r.labels(), r.Config),
+		ObjectMeta: templates.ObjectMetaClusterScope(clusterRoleBindingNameAuthDelegator, r.labels(), r.Config),
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
