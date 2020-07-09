@@ -11,12 +11,14 @@ import (
 )
 
 const (
-	componentName          = "proxy-injector"
-	serviceAccountName     = "linkerd-proxy-injector"
-	clusterRoleName        = "linkerd-proxy-injector"
-	clusterRoleBindingName = "linkerd-proxy-injector"
-	deploymentName         = "linkerd-proxy-injector"
-	serviceName            = "linkerd-proxy-injector"
+	componentName                = "proxy-injector"
+	serviceAccountName           = "linkerd-proxy-injector"
+	clusterRoleName              = "linkerd-proxy-injector"
+	clusterRoleBindingName       = "linkerd-proxy-injector"
+	mutatingWebhookConfiguration = "linkerd-proxy-injector-webhook-config"
+	deploymentName               = "linkerd-proxy-injector"
+	serviceName                  = "linkerd-proxy-injector"
+	secretName                   = "linkerd-proxy-injector-tls"
 )
 
 // Reconciler .
@@ -43,9 +45,11 @@ func (r *Reconciler) Reconcile(log logr.Logger) error {
 	log.Info("Reconciling")
 
 	for _, res := range []resources.ResourceWithDesiredState{
+		{Resource: r.mutatingWebhookConfiguration, DesiredState: desiredState},
 		{Resource: r.serviceAccount, DesiredState: desiredState},
 		{Resource: r.clusterRole, DesiredState: desiredState},
 		{Resource: r.clusterRoleBinding, DesiredState: desiredState},
+		{Resource: r.secret, DesiredState: desiredState},
 		{Resource: r.deployment, DesiredState: desiredState},
 		{Resource: r.service, DesiredState: desiredState},
 	} {

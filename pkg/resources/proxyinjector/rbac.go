@@ -2,8 +2,11 @@ package proxyinjector
 
 import (
 	"github.com/spaghettifunk/linkerd2-operator/pkg/resources/templates"
+	"github.com/spaghettifunk/linkerd2-operator/pkg/util"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 )
@@ -60,6 +63,49 @@ func (r *Reconciler) clusterRoleBinding() runtime.Object {
 				Kind:      "ServiceAccount",
 				Name:      serviceAccountName,
 				Namespace: r.Config.Namespace,
+			},
+		},
+	}
+}
+
+func (r *Reconciler) mutatingWebhookConfiguration() runtime.Object {
+	ignore := admissionregistrationv1beta1.Ignore
+	none := admissionregistrationv1beta1.SideEffectClassNone
+	return &admissionregistrationv1beta1.MutatingWebhookConfiguration{
+		ObjectMeta: templates.ObjectMetaClusterScope(mutatingWebhookConfiguration, r.labels(), r.Config),
+		Webhooks: []admissionregistrationv1beta1.MutatingWebhook{
+			{
+				AdmissionReviewVersions: []string{"v1beta1"},
+				Name:                    "linkerd-proxy-injector.linkerd.io",
+				NamespaceSelector: &v1.LabelSelector{
+					MatchExpressions: []v1.LabelSelectorRequirement{
+						{
+							Key:      "config.linkerd.io/admission-webhooks",
+							Operator: "NotIn",
+							Values:   []string{"disabled"},
+						},
+					},
+				},
+				ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
+					Service: &admissionregistrationv1beta1.ServiceReference{
+						Name:      "linkerd-proxy-injector",
+						Namespace: r.Config.Namespace,
+						Path:      util.StrPointer("/"),
+					},
+					CABundle: []byte(r.Config.Spec.SelfSignedCertificates.TrustAnchorsPEM),
+				},
+				FailurePolicy: &ignore,
+				SideEffects:   &none,
+				Rules: []admissionregistrationv1beta1.RuleWithOperations{
+					{
+						Operations: []admissionregistrationv1beta1.OperationType{"CREATE"},
+						Rule: admissionregistrationv1beta1.Rule{
+							APIGroups:   []string{""},
+							APIVersions: []string{"v1"},
+							Resources:   []string{"pods"},
+						},
+					},
+				},
 			},
 		},
 	}

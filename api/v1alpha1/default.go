@@ -11,8 +11,8 @@ import (
 const (
 	linkerdImageHub               = "docker.io/davideberdin"
 	linkerdImageVersion           = "v0.1.0"
-	defaultImageHub               = "gcr.io/linkerd-io/"
-	defaultImageVersion           = "2.8.1"
+	defaultImageHub               = "gcr.io/linkerd-io"
+	defaultImageVersion           = "stable-2.8.1"
 	defaultCollectorImageHub      = "omnition"
 	defaultCollectorImageVersion  = "0.1.11"
 	defaultJaegerImageHub         = "jaegertracing"

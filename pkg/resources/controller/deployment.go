@@ -73,7 +73,7 @@ func (r *Reconciler) deployment() runtime.Object {
 func (r *Reconciler) containers() []apiv1.Container {
 
 	args := []string{
-		"-public-api",
+		"public-api",
 		fmt.Sprintf("-prometheus-url=http://linkerd-prometheus.%s.svc.%s:9090", r.Config.Namespace, "cluster.local"),
 		fmt.Sprintf("-destination-addr=linkerd-dst.%s.svc.%s:8086", r.Config.Namespace, "cluster.local"),
 		"-controller-namespace=" + r.Config.Namespace,
