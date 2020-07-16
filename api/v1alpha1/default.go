@@ -38,8 +38,8 @@ const (
 
 var defaultResources = &apiv1.ResourceRequirements{
 	Limits: apiv1.ResourceList{
-		apiv1.ResourceCPU:    resource.MustParse("1"),
-		apiv1.ResourceMemory: resource.MustParse("250Mi"),
+		apiv1.ResourceCPU:    resource.MustParse("100m"),
+		apiv1.ResourceMemory: resource.MustParse("50Mi"),
 	},
 	Requests: apiv1.ResourceList{
 		apiv1.ResourceCPU:    resource.MustParse("100m"),
@@ -56,7 +56,7 @@ func SetDefaults(config *Linkerd) {
 	// certs
 	if config.Spec.SelfSignedCertificates == nil {
 		// create certs here and dispatch them in the configs
-		it, err := certs.GenerateTrustAnchorsCertificates("")
+		it, err := certs.GenerateTrustAnchorsCertificates(defaultNetworkName)
 		// TODO: fix this
 		if err != nil {
 			panic(err)
@@ -99,8 +99,8 @@ func SetDefaults(config *Linkerd) {
 	if config.Spec.Prometheus.Resources == nil {
 		config.Spec.Prometheus.Resources = &apiv1.ResourceRequirements{
 			Limits: apiv1.ResourceList{
-				apiv1.ResourceCPU:    resource.MustParse("4"),
-				apiv1.ResourceMemory: resource.MustParse("8Gi"),
+				apiv1.ResourceCPU:    resource.MustParse("300m"),
+				apiv1.ResourceMemory: resource.MustParse("300Mi"),
 			},
 			Requests: apiv1.ResourceList{
 				apiv1.ResourceCPU:    resource.MustParse("300m"),

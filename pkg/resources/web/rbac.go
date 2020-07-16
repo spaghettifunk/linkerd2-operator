@@ -8,9 +8,50 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-func (r *Reconciler) serviceAccount() runtime.Object {
-	return &apiv1.ServiceAccount{
-		ObjectMeta: templates.ObjectMeta(serviceAccountName, r.labels(), r.Config),
+func (r *Reconciler) role() runtime.Object {
+	return &rbacv1.Role{
+		ObjectMeta: templates.ObjectMeta(roleName, r.labels(), r.Config),
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups:     []string{""},
+				Resources:     []string{"configmaps"},
+				Verbs:         []string{"get"},
+				ResourceNames: []string{"linkerd-config"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"namespaces", "configmaps"},
+				Verbs:     []string{"get"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"serviceaccounts", "pods"},
+				Verbs:     []string{"list"},
+			},
+			{
+				APIGroups: []string{"apps"},
+				Resources: []string{"replicasets"},
+				Verbs:     []string{"list"},
+			},
+		},
+	}
+}
+
+func (r *Reconciler) roleBinding() runtime.Object {
+	return &rbacv1.RoleBinding{
+		ObjectMeta: templates.ObjectMeta(roleBindingName, r.labels(), r.Config),
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     roleName,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      serviceAccountName,
+				Namespace: r.Config.Namespace,
+			},
+		},
 	}
 }
 
@@ -52,24 +93,6 @@ func (r *Reconciler) clusterRole() runtime.Object {
 	}
 }
 
-func (r *Reconciler) clusterRoleBindingWebAdmin() runtime.Object {
-	return &rbacv1.ClusterRoleBinding{
-		ObjectMeta: templates.ObjectMetaClusterScope(clusterRoleBindingNameWebAdmin, r.labels(), r.Config),
-		RoleRef: rbacv1.RoleRef{
-			Kind:     "ClusterRole",
-			APIGroup: "rbac.authorization.k8s.io",
-			Name:     clusterRoleName,
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				Kind:      "ServiceAccount",
-				Name:      serviceAccountName,
-				Namespace: r.Config.Namespace,
-			},
-		},
-	}
-}
-
 func (r *Reconciler) clusterRoleBindingWebCheck() runtime.Object {
 	return &rbacv1.ClusterRoleBinding{
 		ObjectMeta: templates.ObjectMetaClusterScope(clusterRoleBindingNameWebCheck, r.labels(), r.Config),
@@ -88,31 +111,26 @@ func (r *Reconciler) clusterRoleBindingWebCheck() runtime.Object {
 	}
 }
 
-func (r *Reconciler) role() runtime.Object {
-	return &rbacv1.Role{
-		ObjectMeta: templates.ObjectMeta(roleName, r.labels(), r.Config),
-		Rules: []rbacv1.PolicyRule{
+func (r *Reconciler) clusterRoleBindingWebAdmin() runtime.Object {
+	return &rbacv1.ClusterRoleBinding{
+		ObjectMeta: templates.ObjectMetaClusterScope(clusterRoleBindingNameWebAdmin, r.labels(), r.Config),
+		RoleRef: rbacv1.RoleRef{
+			Kind:     "ClusterRole",
+			APIGroup: "rbac.authorization.k8s.io",
+			Name:     "linkerd-tap-admin",
+		},
+		Subjects: []rbacv1.Subject{
 			{
-				APIGroups:     []string{""},
-				Resources:     []string{"configmaps"},
-				Verbs:         []string{"get"},
-				ResourceNames: []string{"linkerd-config"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"namespaces", "configmaps"},
-				Verbs:     []string{"get"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"serviceaccounts", "pods"},
-				Verbs:     []string{"list"},
-			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"replicasets"},
-				Verbs:     []string{"list"},
+				Kind:      "ServiceAccount",
+				Name:      serviceAccountName,
+				Namespace: r.Config.Namespace,
 			},
 		},
+	}
+}
+
+func (r *Reconciler) serviceAccount() runtime.Object {
+	return &apiv1.ServiceAccount{
+		ObjectMeta: templates.ObjectMeta(serviceAccountName, r.labels(), r.Config),
 	}
 }

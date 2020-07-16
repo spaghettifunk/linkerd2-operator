@@ -44,10 +44,10 @@ func (r *Reconciler) Reconcile(log logr.Logger) error {
 	log.Info("Reconciling")
 
 	for _, res := range []resources.ResourceWithDesiredState{
+		{Resource: r.secret, DesiredState: desiredState},
 		{Resource: r.serviceAccount, DesiredState: desiredState},
 		{Resource: r.clusterRole, DesiredState: desiredState},
 		{Resource: r.clusterRoleBinding, DesiredState: desiredState},
-		{Resource: r.secret, DesiredState: desiredState},
 		{Resource: r.deployment, DesiredState: desiredState},
 		{Resource: r.service, DesiredState: desiredState},
 	} {

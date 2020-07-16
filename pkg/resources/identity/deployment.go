@@ -5,7 +5,6 @@ import (
 	"github.com/spaghettifunk/linkerd2-operator/pkg/util"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/intstr"
 
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
@@ -24,11 +23,11 @@ func (r *Reconciler) deployment() runtime.Object {
 		Spec: appsv1.DeploymentSpec{
 			Strategy: appsv1.DeploymentStrategy{
 				// TODO: enable only when podAntiAffinity is true
-				RollingUpdate: &appsv1.RollingUpdateDeployment{
-					MaxUnavailable: &intstr.IntOrString{IntVal: 1},
-				},
+				// RollingUpdate: &appsv1.RollingUpdateDeployment{
+				// 	MaxUnavailable: &intstr.IntOrString{IntVal: 1},
+				// },
 			},
-			Replicas: r.Config.Spec.Controller.ReplicaCount,
+			Replicas: r.Config.Spec.Identity.ReplicaCount,
 			Selector: &v1.LabelSelector{
 				MatchLabels: r.labels(),
 			},
@@ -56,7 +55,7 @@ func (r *Reconciler) deployment() runtime.Object {
 							Name: "identity-issuer",
 							VolumeSource: apiv1.VolumeSource{
 								Secret: &apiv1.SecretVolumeSource{
-									SecretName: "linkerd-identity-issuer",
+									SecretName: secretName,
 								},
 							},
 						},
@@ -121,10 +120,13 @@ func (r *Reconciler) containers() []apiv1.Container {
 			Name:            "identity",
 			Image:           *identityConfig.Image,
 			ImagePullPolicy: r.Config.Spec.ImagePullPolicy,
-			Args:            []string{"identity", "-log-level=info"},
-			LivenessProbe:   templates.DefaultLivenessProbe("/ping", 9990, 10, 30),
-			ReadinessProbe:  templates.DefaultReadinessProbe("/ready", 9990, 7, 30),
-			Resources:       *identityConfig.Resources,
+			Args: []string{
+				"identity",
+				"-log-level=info",
+			},
+			LivenessProbe:  templates.DefaultLivenessProbe("/ping", 9990, 10, 30),
+			ReadinessProbe: templates.DefaultReadinessProbe("/ready", 9990, 7, 30),
+			Resources:      *identityConfig.Resources,
 			Ports: []apiv1.ContainerPort{
 				templates.DefaultContainerPort("grpc", 8080),
 				templates.DefaultContainerPort("admin-http", 9990),
@@ -136,6 +138,10 @@ func (r *Reconciler) containers() []apiv1.Container {
 				{
 					MountPath: "/var/run/linkerd/config",
 					Name:      "config",
+				},
+				{
+					MountPath: "/var/run/linkerd/identity/issuer",
+					Name:      "identity-issuer",
 				},
 			},
 			TerminationMessagePath:   apiv1.TerminationMessagePathDefault,

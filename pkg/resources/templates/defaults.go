@@ -118,7 +118,7 @@ func ProxyInitContainer() []apiv1.Container {
 					},
 				},
 				Privileged:             util.BoolPointer(false),
-				ReadOnlyRootFilesystem: util.BoolPointer(false),
+				ReadOnlyRootFilesystem: util.BoolPointer(true),
 				RunAsNonRoot:           util.BoolPointer(false),
 				RunAsUser:              util.Int64Pointer(0),
 			},
@@ -137,12 +137,12 @@ func DefaultProxyContainer(config v1alpha1.LinkerdSpec) apiv1.Container {
 		ImagePullPolicy: apiv1.PullIfNotPresent,
 		Resources: apiv1.ResourceRequirements{
 			Limits: apiv1.ResourceList{
-				apiv1.ResourceCPU:    resource.MustParse("1"),
-				apiv1.ResourceMemory: resource.MustParse("250Mi"),
-			},
-			Requests: apiv1.ResourceList{
 				apiv1.ResourceCPU:    resource.MustParse("100m"),
 				apiv1.ResourceMemory: resource.MustParse("50Mi"),
+			},
+			Requests: apiv1.ResourceList{
+				apiv1.ResourceCPU:    resource.MustParse("10m"),
+				apiv1.ResourceMemory: resource.MustParse("10Mi"),
 			},
 		},
 		VolumeMounts: []apiv1.VolumeMount{
@@ -151,27 +151,38 @@ func DefaultProxyContainer(config v1alpha1.LinkerdSpec) apiv1.Container {
 				MountPath: "/var/run/linkerd/identity/end-entity",
 			},
 		},
-		// LivenessProbe: &apiv1.Probe{
-		// 	Handler: apiv1.Handler{
-		// 		HTTPGet: &apiv1.HTTPGetAction{
-		// 			Path: "/live",
-		// 			Port: intstr.FromString("4191"),
-		// 		},
-		// 	},
-		// 	InitialDelaySeconds: int32(10),
-		// },
-		// ReadinessProbe: &apiv1.Probe{
-		// 	Handler: apiv1.Handler{
-		// 		HTTPGet: &apiv1.HTTPGetAction{
-		// 			Path: "/ready",
-		// 			Port: intstr.FromString("4191"),
-		// 		},
-		// 	},
-		// 	InitialDelaySeconds: int32(2),
-		// },
+		LivenessProbe: &apiv1.Probe{
+			Handler: apiv1.Handler{
+				HTTPGet: &apiv1.HTTPGetAction{
+					Path: "/live",
+					Port: intstr.FromInt(4191),
+				},
+			},
+			InitialDelaySeconds: int32(10),
+		},
+		ReadinessProbe: &apiv1.Probe{
+			Handler: apiv1.Handler{
+				HTTPGet: &apiv1.HTTPGetAction{
+					Path: "/ready",
+					Port: intstr.FromInt(4191),
+				},
+			},
+			InitialDelaySeconds: int32(2),
+		},
+		Ports: []apiv1.ContainerPort{
+			{
+				ContainerPort: int32(4143),
+				Name:          "linkerd-proxy",
+			},
+			{
+				ContainerPort: int32(4191),
+				Name:          "linkerd-admin",
+			},
+		},
 		SecurityContext: &apiv1.SecurityContext{
-			RunAsUser:              util.Int64Pointer(2102),
-			ReadOnlyRootFilesystem: util.BoolPointer(true),
+			RunAsUser:                util.Int64Pointer(2102),
+			ReadOnlyRootFilesystem:   util.BoolPointer(true),
+			AllowPrivilegeEscalation: util.BoolPointer(false),
 		},
 		Env: []apiv1.EnvVar{
 			{

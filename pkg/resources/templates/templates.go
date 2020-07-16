@@ -8,6 +8,7 @@ import (
 	"github.com/spaghettifunk/linkerd2-operator/pkg/util"
 )
 
+// ObjectMeta .
 func ObjectMeta(name string, labels map[string]string, config runtime.Object) metav1.ObjectMeta {
 	obj := config.DeepCopyObject()
 	objMeta, _ := meta.Accessor(obj)
@@ -30,12 +31,37 @@ func ObjectMeta(name string, labels map[string]string, config runtime.Object) me
 	}
 }
 
+// ObjectMetaNamespace .
+func ObjectMetaNamespace(name, namespace string, labels map[string]string, config runtime.Object) metav1.ObjectMeta {
+	obj := config.DeepCopyObject()
+	objMeta, _ := meta.Accessor(obj)
+	ovk := config.GetObjectKind().GroupVersionKind()
+
+	return metav1.ObjectMeta{
+		Name:      name,
+		Namespace: namespace,
+		Labels:    labels,
+		OwnerReferences: []metav1.OwnerReference{
+			{
+				APIVersion:         ovk.GroupVersion().String(),
+				Kind:               ovk.Kind,
+				Name:               objMeta.GetName(),
+				UID:                objMeta.GetUID(),
+				Controller:         util.BoolPointer(true),
+				BlockOwnerDeletion: util.BoolPointer(true),
+			},
+		},
+	}
+}
+
+// ObjectMetaWithAnnotations .
 func ObjectMetaWithAnnotations(name string, labels map[string]string, annotations map[string]string, config runtime.Object) metav1.ObjectMeta {
 	o := ObjectMeta(name, labels, config)
 	o.Annotations = annotations
 	return o
 }
 
+// ObjectMetaClusterScope .
 func ObjectMetaClusterScope(name string, labels map[string]string, config runtime.Object) metav1.ObjectMeta {
 	obj := config.DeepCopyObject()
 	objMeta, _ := meta.Accessor(obj)

@@ -15,24 +15,6 @@ func (r *Reconciler) serviceAccount() runtime.Object {
 	}
 }
 
-func (r *Reconciler) roleBindingAuthReader() runtime.Object {
-	return &rbacv1.RoleBinding{
-		ObjectMeta: templates.ObjectMeta(roleBindingNameAuthReader, r.labels(), r.Config),
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "Role",
-			Name:     "extension-apiserver-authentication-reader",
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				Kind:      "ServiceAccount",
-				Name:      serviceAccountName,
-				Namespace: r.Config.Namespace,
-			},
-		},
-	}
-}
-
 func (r *Reconciler) clusterRole() runtime.Object {
 	return &rbacv1.ClusterRole{
 		ObjectMeta: templates.ObjectMetaClusterScope(clusterRoleName, r.labels(), r.Config),
@@ -105,9 +87,27 @@ func (r *Reconciler) clusterRoleBindingAuthDelegator() runtime.Object {
 	}
 }
 
+func (r *Reconciler) roleBindingAuthReader() runtime.Object {
+	return &rbacv1.RoleBinding{
+		ObjectMeta: templates.ObjectMetaNamespace(roleBindingNameAuthReader, "kube-system", r.labels(), r.Config),
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     "extension-apiserver-authentication-reader",
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      serviceAccountName,
+				Namespace: r.Config.Namespace,
+			},
+		},
+	}
+}
+
 func (r *Reconciler) apiService() runtime.Object {
 	return &apiregistration.APIService{
-		ObjectMeta: templates.ObjectMeta(apiServiceName, r.labels(), r.Config),
+		ObjectMeta: templates.ObjectMetaClusterScope(apiServiceName, r.labels(), r.Config),
 		Spec: apiregistration.APIServiceSpec{
 			Group:                "tap.linkerd.io",
 			Version:              "v1alpha1",
@@ -117,7 +117,7 @@ func (r *Reconciler) apiService() runtime.Object {
 				Name:      "linkerd-tap",
 				Namespace: r.Config.Namespace,
 			},
-			CABundle: []byte(r.Config.Spec.SelfSignedCertificates.TrustAnchorsPEM),
+			CABundle: []byte(r.Config.Spec.SelfSignedCertificates.CrtPEM),
 		},
 	}
 }

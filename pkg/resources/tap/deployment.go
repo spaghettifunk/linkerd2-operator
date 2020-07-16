@@ -61,14 +61,6 @@ func (r *Reconciler) deployment() runtime.Object {
 								},
 							},
 						},
-						{
-							Name: "linkerd-identity-end-entity",
-							VolumeSource: apiv1.VolumeSource{
-								EmptyDir: &apiv1.EmptyDirVolumeSource{
-									Medium: apiv1.StorageMediumMemory,
-								},
-							},
-						},
 					},
 				},
 			},

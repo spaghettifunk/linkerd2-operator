@@ -48,6 +48,7 @@ func (r *Reconciler) Reconcile(log logr.Logger) error {
 	for _, res := range []resources.ResourceWithDesiredState{
 		{Resource: r.serviceAccount, DesiredState: desiredState},
 		{Resource: r.role, DesiredState: desiredState},
+		{Resource: r.roleBinding, DesiredState: desiredState},
 		{Resource: r.clusterRole, DesiredState: desiredState},
 		{Resource: r.clusterRoleBindingWebCheck, DesiredState: desiredState},
 		{Resource: r.clusterRoleBindingWebAdmin, DesiredState: desiredState},
